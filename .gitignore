@@ -1,0 +1,66 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.env
+.env.local
+.env.*.local
+.venv
+venv/
+env/
+
+# Data files - DO NOT COMMIT
+Data/
+*.csv
+*.xlsx
+*.xls
+*.zst
+*.parquet
+*.feather
+*.hdf5
+*.h5
+
+# Model engine - proprietary
+Features/features.py
+
+# API keys and credentials
+*.key
+*.pem
+*.env.*
+credentials.json
+secrets.json
+config.json
+databento_key.txt
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs and temporary files
+*.log
+logs/
+temp/
+tmp/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Model files (if generated)
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.pb
+*.onnx
+models/
+checkpoints/
+
