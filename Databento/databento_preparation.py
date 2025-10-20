@@ -41,7 +41,6 @@ def aggregate_publisher_data(df: pd.DataFrame):
 
     return result
 
-
 # create knowledge_date, this code needs to be looked at
 def knowledge_date(df: pd.DataFrame):
     """
@@ -73,7 +72,6 @@ def main():
     time_per_row = time_taken / row_count
     time_per_thousand_rows = time_per_row * 1000
     prod_estimate = time_per_thousand_rows * 30000
-
     prod_in_minutes = prod_estimate / 60
 
     print(result)

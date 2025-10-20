@@ -26,7 +26,7 @@ Data/
 *.h5
 
 # Model engine - proprietary
-Features/features.py
+Features/Individual Features/
 
 # API keys and credentials
 *.key

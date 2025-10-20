@@ -1,11 +1,5 @@
-from ntpath import isfile
 import os
-from databento.common.enums import JobState
-from dotenv import load_dotenv
-import databento as db
 import pandas as pd
-import numpy as np
-from datetime import date, datetime
 from databento import DBNStore
 
 folder_path = r"C:\Users\carso\Development\emerytrading\Data\Stocks\DBEQ-20251012-6RJMLE9UPY"

@@ -3,7 +3,8 @@ from Databento.unpack import process_databento_zstfiles, get_files, convert_to_c
 import pandas as pd
 
 def main():
-    # df = test_batch_download()
+    job_id = test_batch_download()
+    print(job_id)
     # download_from_databento()
 
 

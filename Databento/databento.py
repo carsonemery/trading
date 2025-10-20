@@ -2,8 +2,6 @@ import os
 from databento.common.enums import JobState
 from dotenv import load_dotenv
 import databento as db
-import pandas as pd
-import numpy as np
 
 # load environment variables and API key
 load_dotenv()
@@ -16,27 +14,31 @@ test_symbols = ["TMQ", "SOPA", "ONMD", "BJDX",
                 "KRYS", "RYN", "PKST", "GXO", 
                 "ASMIY", "ASTH", "OS", "INTA", 
                 "HYPD", "SONN", "TSLA", "META",
-                "STI", "AQMS", "GWH", "NVA", 
-                "CRML", "ELBM", "WWR", "GWAV"]
+                "STI", "AQMS", "GWH", "NVA",
+                "ELBM", "WWR", "GWAV", "COOT", 
+                "GME", "OMER", "PFAI", "LAES", 
+                "NUAI", "NVTS"]
 
 # function to run a batch download
 def test_batch_download():
     # send job
     job = data_client.batch.submit_job(
-        dataset = "DBEQ.BASIC",
+        dataset = "DBEQ.BASIC", # guess this only goes back until 2023
         symbols = test_symbols,
         stype_in = "raw_symbol",
         encoding = "dbn",
         schema = "ohlcv-1d",
-        start = "2020-01-01",
+        start = "2023-01-01",
         end = "2025-10-10"
     )
+
+    return job.id
 
 def download_from_databento():
     # download OHLCV data files
     print("\nDownloading files...")
-    files = data_client.batch.download(
-        # job_id=job, @TODO NEED TO FIX, find a way to get the job id from the call/return
+    data_client.batch.download(
+        # job_id= (just update manually for now)
         output_dir=r"C:\Users\carso\Development\emerytrading\Data\Stocks"
     )
     
