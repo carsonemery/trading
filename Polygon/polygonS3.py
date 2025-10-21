@@ -31,7 +31,7 @@ bucket_name = 'flatfiles'
 # List the objects using our prefix 
 for page in paginator.paginate(Bucket = bucket_name, Prefix = prefix):
     for obj in page['Contents']:
-        print(obj['Key'])
+        print(obj['Key']) 
 
 
 # # Define a local file path to download to 
