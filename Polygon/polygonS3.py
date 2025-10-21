@@ -8,8 +8,8 @@ load_dotenv()
 
 # Initialize a session
 session = boto3.Session(
-  aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID'),
-  aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY'),
+  aws_access_key_id = os.getenv('ACCESS_KEY_ID'),
+  aws_secret_access_key = os.getenv('SECRET_ACCESS_KEY'),
 )
 
 # Create a client and specify the endpoint 
@@ -22,15 +22,8 @@ s3 = session.client(
 # Initialize a paginator for listing objects
 paginator = s3.get_paginator('list_objects_v2')
 
-# Prefix options
-# - 'global_crypto' for global cryptocurrency data
-# - 'global_forex' for global forex data
-# - 'us_indices' for US indices data
-# - 'us_options_opra' for US options (OPRA) data
-# - 'us_stocks_sip' for US stocks (SIP) data
-
 # Using us stocks
-prefix = 'us_stocks_sip'  # Example: Change this prefix to match your data need
+prefix = 'us_stocks_sip'
 
 # Define a bucket name 
 bucket_name = 'flatfiles'
@@ -41,9 +34,11 @@ for page in paginator.paginate(Bucket = bucket_name, Prefix = prefix):
         print(obj['Key'])
 
 
-# Define a local file path to download to 
-local_file_path = ''
+# # Define a local file path to download to 
+# local_file_path = ''
 
-# Download a file (bucket name, endpoint, path to download to locally)
-# could put this in a loop the loop above I think to download
-s3.download_file()
+# # Download a file (bucket name, endpoint, path to download to locally)
+# # could put this in a loop the loop above I think to download
+# s3.download_file(bucket_name, )
+
+
