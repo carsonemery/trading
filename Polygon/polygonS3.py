@@ -5,9 +5,6 @@ import os
 from dotenv import load_dotenv
 import re
 from datetime import datetime, timedelta
-import gzip
-import csv
-
 
 # Load environment variables and API key
 load_dotenv()
@@ -34,7 +31,7 @@ prefix = 'us_stocks_sip/day_aggs_v1/'
 # Define a bucket name 
 bucket_name = 'flatfiles'
 
-# Define your date range
+# Define date range
 START_DATE = '2025-10-01'
 END_DATE = '2025-10-20'
 
@@ -42,7 +39,7 @@ END_DATE = '2025-10-20'
 start_dt = datetime.strptime(START_DATE, '%Y-%m-%d')
 end_dt = datetime.strptime(END_DATE, '%Y-%m-%d')
 
-# Construct the FULL S3 key for the day BEFORE your start date
+# Construct the FULL S3 key for the day BEFORE start date
 day_before = start_dt - timedelta(days=1)
 year = day_before.strftime('%Y')
 month = day_before.strftime('%m')
@@ -79,13 +76,13 @@ def download_flatfiles():
                               status = True
                               break
 
-                        # print the object name
+                        # Print the object name
                         print(object_name)
 
                         local_filename = f"{date_str}.csv.gz"
                         path = os.path.join(local_filepath, local_filename)
 
-                        # download the filename to the file path
+                        # Download the filename to the file path
                         try: 
                               s3.download_file(bucket_name, object_name, path)
                               print(f"Downloaded {path}")
