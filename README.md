@@ -1,17 +1,24 @@
-# bearplanes capital / emerytrading
+# Bearplanes Capital / emerytrading
 
-This is the beginning of a quantitative trading project to develop, test and trade various quantitative strategies. 
+Quantitative trading project focused on developing, testing, and eventually trading systematic strategies.
 
-Current interests lie in small cap strategies and crypto arb and prediction markets.
+**Current Focus/Interests:** Small cap equities, crypto arbitrage, prediction markets
 
-## In Development
+## Setup
 
-- Testing data provided through Databento
-    - Will be looking for supplemental data and generalize the data pipeline(s)
-- Cleaning and preparing the data
-    - Generalized process for aggregating publishers data, normalizing the data 
-- Will be looking to use a datalake or other cloud platform eventually 
-- Setting up features
+```bash
+uv sync
+```
 
-## License 
+Requires `.env` file with:
+- `POLYGON_API_KEY`
+- Additional API keys as needed
+
+## Data Sources
+
+Evaluating: Databento and Polygon
+
+## Status
+
+Early development - building data pipeline and feature engineering infrastructure. Code refactoring and orchestration planned after data source evaluation.
 
