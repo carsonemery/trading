@@ -25,7 +25,7 @@ tickers_list = ['META', 'BLL', 'BALL',
 def get_events(tickers_list: []):
     """
     Get ticker events for a list of tickers and handle errors properly.
-    Returns tuple of (successful_events, failed_tickers)
+    Returns tuple of (successful_events, failed_tickers) which are lists.
     """
     list_of_events = []
     list_failed_tickers = []
@@ -97,9 +97,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
