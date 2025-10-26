@@ -1,4 +1,4 @@
-# Bearplanes Capital / emerytrading
+# Bearplanes Capital
 
 Quantitative trading project focused on developing, testing, and eventually trading systematic strategies.
 
