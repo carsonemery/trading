@@ -1,4 +1,5 @@
 import boto3
+import aioboto3
 import pandas as pd
 from botocore.config import Config
 import os
@@ -9,18 +10,18 @@ from datetime import datetime, timedelta
 # Load environment variables and API key
 load_dotenv()
 
-# Initialize a session
-session = boto3.Session(
+# Initialize a session (async)
+session = aioboto3.Session(
   aws_access_key_id = os.getenv('ACCESS_KEY_ID'),
   aws_secret_access_key = os.getenv('SECRET_ACCESS_KEY'),
 )
 
 # Create a client and specify the endpoint 
-s3 = session.client(
-  's3',
-  endpoint_url='https://files.polygon.io',
-  config=Config(signature_version='s3v4'),
-)
+# s3 = session.client(
+#   's3',
+#   endpoint_url='https://files.polygon.io',
+#   config=Config(signature_version='s3v4'),
+# )
 
 # Initialize a paginator for listing objects
 paginator = s3.get_paginator('list_objects_v2')
@@ -32,8 +33,8 @@ prefix = 'us_stocks_sip/day_aggs_v1/'
 bucket_name = 'flatfiles'
 
 # Define date range
-START_DATE = '2025-10-01'
-END_DATE = '2025-10-20'
+START_DATE = '2016-01-01'
+END_DATE = '2025-10-26'
 
 # Convert to datetime objects
 start_dt = datetime.strptime(START_DATE, '%Y-%m-%d')
@@ -49,18 +50,35 @@ date_str = day_before.strftime('%Y-%m-%d')
 start_after_key = f'us_stocks_sip/day_aggs_v1/{year}/{month}/{date_str}.csv.gz'
 
 # Define a local path to download files 
-local_filepath = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test10-20'
+local_filepath = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test-fullpull'
 
-def download_flatfiles():
-      status = False
-      downloaded = 0
+def build_download_list(
+      bucket, 
+      prefix, 
+      start_after_date) -> []:
+      """ Gets a list of all files to download from S3 for our desired universe
+          returns the list.
+      """
+      list_to_download = []
 
       # List the objects using our prefix 
-      for page in paginator.paginate(Bucket = bucket_name, Prefix = prefix,StartAfter=start_after_key):
-            if status:
-                  break
-            
-            for obj in page['Contents']:
+      for page in paginator.paginate(bucket, prefix,start_after_date):
+            list_to_download.append(page)
+
+      return list_to_download
+
+async def download_flatfiles_async(list_to_download: []):
+      async with session.client(
+            's3',
+            endpoint_url='https://files.polygon.io',
+            config=Config(signature_version='s3v4'),
+      ) as s3:
+      
+      async with asyncio.TaksGroup() as tg:
+      
+            for page in list_to_download:
+
+                  for obj in page['Contents']:
                   
                   # explicitly extract filename to a string
                   object_name = str(obj['Key'])
@@ -93,7 +111,22 @@ def download_flatfiles():
                         print("no data found in filename")
                         continue
             if status:
-                  break 
+                  break
+
+
+
+
+
+def async download_file(
+      s3, 
+      bucket_name,
+      object_name, 
+      local_path):
+      """ Download individual files logic
+      """
+
+      pass
+
 
 def read_files_into_df(
       local_filepath: str):
@@ -118,7 +151,7 @@ def main():
       # download_flatfiles()
       df = read_files_into_df(local_filepath)
       print(df.head())
-      df.to_csv(r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\polygon_test.csv', index=False)
+      df.to_csv(r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\polygon_test_10yrs.csv', index=False)
       
 
 if __name__ == "__main__":
