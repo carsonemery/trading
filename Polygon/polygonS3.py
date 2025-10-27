@@ -1,3 +1,4 @@
+from ast import List
 import boto3
 import aioboto3
 import pandas as pd
@@ -6,27 +7,21 @@ import os
 from dotenv import load_dotenv
 import re
 from datetime import datetime, timedelta
+import asyncio
 
 # Load environment variables and API key
 load_dotenv()
 
-# Initialize a session (async)
+# Initialize a session (async compatible)
 session = aioboto3.Session(
   aws_access_key_id = os.getenv('ACCESS_KEY_ID'),
   aws_secret_access_key = os.getenv('SECRET_ACCESS_KEY'),
 )
 
-# Create a client and specify the endpoint 
-# s3 = session.client(
-#   's3',
-#   endpoint_url='https://files.polygon.io',
-#   config=Config(signature_version='s3v4'),
-# )
-
 # Initialize a paginator for listing objects
-paginator = s3.get_paginator('list_objects_v2')
+paginator_spec = 'list_objects_v2'
 
-# Using us stocks
+# Using US stocks
 prefix = 'us_stocks_sip/day_aggs_v1/'
 
 # Define a bucket name 
@@ -52,84 +47,115 @@ start_after_key = f'us_stocks_sip/day_aggs_v1/{year}/{month}/{date_str}.csv.gz'
 # Define a local path to download files 
 local_filepath = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test-fullpull'
 
+### ====================================================================================================== ###
+
 def build_download_list(
-      bucket, 
-      prefix, 
-      start_after_date) -> []:
-      """ Gets a list of all files to download from S3 for our desired universe
-          returns the list.
+      bucket_name: str, 
+      prefix: str, 
+      start_after_date: str,
+      end_date: str,
+      paginator_spec: str
+      ) -> []:
+      """ Build and return a list of files to download from S3
       """
-      list_to_download = []
+
+      # Initialize list to store downloads
+      files_to_download = []
+
+      # Create a regular boto3 client for pagination (async not needed here)
+      s3_sync = boto3.client(
+            's3',
+            endpoint_url='https://files.polygon.io',
+            config=Config(signature_version='s3v4')
+      )
+
+      # Init the paginator
+      paginator = s3_sync.get_paginator(paginator_spec)
 
       # List the objects using our prefix 
-      for page in paginator.paginate(bucket, prefix,start_after_date):
-            list_to_download.append(page)
+      # Page will be a grouping of files, we call these contents pages and each file in the contents an obj
+      for page in paginator.paginate(Bucket=bucket_name, Prefix=prefix, StartAfer=start_after_date):
+            for obj in page['Contents']:
+                  # Explicitly extract filename to a string
+                  object_name = str(obj['Key'])
 
-      return list_to_download
+                  # Extract the date of the file based on the expected format from Polygon
+                  match = re.search(r'(\d{4}-\d{2}-\d{2})', object_name)
+                  date_str = match.group(1)
+                  # Convert the date string to datetime object for comparison
+                  date = datetime.strptime(date_str, '%Y-%m-%d')
 
-async def download_flatfiles_async(list_to_download: []):
+                  # Check if we passed our end date, used to control the date range we pull data
+                  if date >= datetime.strptime(end_date, '%Y-%m-%d'):
+                        return files_to_download
+
+                  # Add file info to the list
+                  filename = f"{date_str}.csv.gz"
+                  path = os.path.join(local_filepath, filename)
+                  
+                  # 
+                  files_to_download.append({
+                        'object_name': object_name,
+                        'path': path,
+                        'date_str': date_str
+                  })
+            
+      return files_to_download
+
+async def download_flatfiles_async(
+      files_to_download: [],
+      ):
+      """
+      """
+      
       async with session.client(
             's3',
             endpoint_url='https://files.polygon.io',
-            config=Config(signature_version='s3v4'),
-      ) as s3:
-      
-      async with asyncio.TaksGroup() as tg:
+            config=Config(signature_version='s3v4'), 
+      ) as s3_async:
       
             for page in list_to_download:
 
-                  for obj in page['Contents']:
-                  
-                  # explicitly extract filename to a string
-                  object_name = str(obj['Key'])
+                 
 
-                  match = re.search(r'(\d{4}-\d{2}-\d{2})', object_name)
-                  if match:
-                        date_str = match.group(1)
-                        # Convert the date string to datetime object for comparison
-                        date = datetime.strptime(date_str, '%Y-%m-%d')
 
-                        # Check if we passed our end date
-                        if date >= datetime.strptime(END_DATE, '%Y-%m-%d'):
-                              status = True
-                              break
-
-                        # Print the object name
-                        print(object_name)
-
-                        local_filename = f"{date_str}.csv.gz"
-                        path = os.path.join(local_filepath, local_filename)
-
-                        # Download the filename to the file path
-                        try: 
-                              s3.download_file(bucket_name, object_name, path)
-                              print(f"Downloaded {path}")
-                              downloaded += 1
-                        except Exception as e:
-                              print(f"could not download {path}")
-                  else:
-                        print("no data found in filename")
-                        continue
-            if status:
-                  break
+                              # Print the object name and type for logging
+                              print(object_name)
+                              print(type(object_name))
+                              # maybe add this info to a datastructure later as well
 
 
 
 
+                        else:
+                              print("no data found in filename")
+                              continue
+                  if status:
+                        break
 
-def async download_file(
+async def download_file(
       s3, 
-      bucket_name,
-      object_name, 
-      local_path):
+      bucket_name: str,
+      file_info: {}
+      ) -> bool:
       """ Download individual files logic
       """
 
-      pass
+      # Download the filename to the file path
+      try:
+            await s3.download_file(bucket_name, file_info[], path)
+            print(f"Downloaded {path}")
+            return True
+      except Exception as e:
+            print(f"could not download {path}")
+            return False
+      
+
+      return
 
 
 def read_files_into_df(
-      local_filepath: str):
+      local_filepath: str) -> []:
       """
       """
       # Create list to hold dataframes
