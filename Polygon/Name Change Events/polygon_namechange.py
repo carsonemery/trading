@@ -14,7 +14,8 @@ def map_symbols(
     reverse_mapping: {},
     historical_data: pd.DataFrame
     ) -> pd.DataFrame:
-    """ Takes a symbol mapping dictionary and dataframe and returns the dataframe with a mapped symbols column
+    """ 
+        Takes a symbol mapping dictionary and dataframe and returns the dataframe with a mapped symbols column
     """
 
     mapped_data = pd.DataFrame()
