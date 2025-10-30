@@ -133,25 +133,36 @@ BLL Splits
     "request_id": "ec48ed365e8b5c62259918df50262346"
   }
 
+[My notes:]
 
-
-{ Tickers to Look into:
+[Garbage tickers to look into (edge cases)]:
 NRXP - Passes
 OCGN - has had symbol change from HSGX in Sep 2019
- - Had split under the symbol HSGX, caused by merger
-PHUN 
-MARK
-GWH
-XENE
+ - Had split under the symbol HSGX, caused by merger - 
+PHUN - Hasnt had any ticker changes, has had large reverse split which is found accurately in the splits endpoint
+MARK - ticker does not appear to have any name change activity until going back 20+ years which appears correct, and one stock split correctly reported as well
+GWH - By my research there have not been any ticker changes, and the date that is returned on the ticker change is the same as the split, the split data seems accurate
+XENE - 
 RCAT
 MRIN
-}
 
 
-Polygon Rep:[
+[Polygon Rep]:
+"
 Simply put, we have used a variety of data providers for corporate actions over the years. As a result, some tickers' splits data is "merged" with the ticker the company used previously, and some is not.
 
 For example, it appears that the BLL/BALL example you provided shows the tickers "stitched" together, showing splits from before the change.
 
 You also mentioned DVLT; which was previously WISA until February of this year. If you query the Splits endpoint for DVLT (the current ticker), nothing is returned. If you use WISA, the splits are returned:
-]
+"
+
+[More Notes]:
+
+* So now do I want to apply adjusted split pricing to all symbols I have record of having a symbol change? If they are due to a merger I will have no way of knowing
+
+* I am actually seeing multiple examples where the date of the "name change event" given back in the name change events API when there HAS NOT been a name change
+is actually the same date as a split event if that ticker had a split. So it seems like the symbol change event is just randomly filling the date it returns
+with the date of the most recent split for that stock
+
+
+
