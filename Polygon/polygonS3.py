@@ -44,6 +44,8 @@ def build_download_list(
 
             us_stocks_sip/day_aggs_v1/2016/01/2016-01-01.csv.gz
       """
+      print("Starting build_download_list")
+      print("============================")
 
       # Initialize list to store DownloadJobs
       jobs: list[DownloadJob] = []
@@ -51,6 +53,8 @@ def build_download_list(
       # Create a regular boto3 client for pagination (async not needed here)
       s3_sync = boto3.client(
             's3',
+            aws_access_key_id=os.getenv('ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('SECRET_ACCESS_KEY'),
             endpoint_url=endpoint_url,
             config=Config(signature_version=signature_version)
       )
@@ -67,8 +71,14 @@ def build_download_list(
                   # Explicitly extract filename to a string
                   object_name = str(obj['Key'])
 
+                  # Also print each object we are downloading
+                  print(object_name)
+
                   # Extract the date of the file based on the expected format from Polygon
+                  # raise an error if we did not get a file with the expected format, would be better to handle this on download
                   match = re.search(r'(\d{4}-\d{2}-\d{2})', object_name)
+                  if not match:
+                        raise ValueError(f"Unexpected key format (no YYY-MM-DD: {object_name})")
                   date_str = match.group(1)
                   # Convert the date string to datetime object for comparison
                   date = datetime.strptime(date_str, '%Y-%m-%d')
@@ -87,7 +97,7 @@ def build_download_list(
                         path = path,
                         date_str = date_str
                   ))
-            
+
       return jobs
 
 async def download_flatfiles_async(
@@ -103,6 +113,9 @@ async def download_flatfiles_async(
       ) -> None:
       """ Orchestrate concurrent downloads with TaskGroup and a semaphore
       """
+      print("Starting download_flatfiles_async")
+      print("=================================")
+
       # Use makedirs to create a folder endpoint for the specified path we chose
       # if it doesnt not exist yet
       os.makedirs(filepath, exist_ok=True)
@@ -112,8 +125,8 @@ async def download_flatfiles_async(
 
       async with session.client(
             's3',
-            endpoint_url='endpoint_url',
-            config=Config(signature_version='signature_version'),
+            endpoint_url=endpoint_url,
+            config=Config(signature_version=signature_version),
       ) as s3_async:
             async with asyncio.TaskGroup() as tg:
                   for job in jobs:
@@ -139,6 +152,9 @@ async def guarded_download(
       """
             Bounded concurrency + skip if exists + retries
       """
+
+      print("Starting guarded_download")
+      print("=========================")
 
       if skip_existing and os.path.exists(job.path):
             return
@@ -194,12 +210,13 @@ def run_download(
       start_after_key: str,
       end_date: str,
       paginator_spec: str,
-      local_folder: str,
+      file_path_for_downloads: str,
       max_concurrency: int,
       skip_existing: bool,
       retries: int,
       backoff_seconds: float,
       endpoint_url: str,
+      signature_version: str,
       output_csv_path: str
       ) -> pd.DataFrame:
       # 1) Build the plan (sync)
@@ -209,7 +226,9 @@ def run_download(
             start_after_date=start_after_key,
             end_date=end_date,
             paginator_spec=paginator_spec,
-            file_path=local_folder,
+            file_path=file_path_for_downloads,
+            endpoint_url=endpoint_url,
+            signature_version=signature_version
       )
 
       # 2) Download concurrently (async)
@@ -221,13 +240,14 @@ def run_download(
             retries=retries,
             backoff_seconds=backoff_seconds,
             endpoint_url=endpoint_url,
-            filepath=local_folder,
+            signature_version=signature_version,
+            filepath=file_path_for_downloads
       ))
 
       # 3) Load local files into a single dataframe (sync)
-      df = read_files_into_df(local_folder)
+      df = read_files_into_df(file_path_for_downloads)
 
-      # 4) Optional: write aggregated CSV (sync)
+      # 4) Optionally, write the dataframe to csv if a path was passed in
       if output_csv_path:
             df.to_csv(output_csv_path, index=False)
 
@@ -272,13 +292,18 @@ def main():
             start_after_key=start_after_key,
             end_date=END_DATE,
             paginator_spec=paginator_spec,
-            local_folder=file_path_for_downloads,
+            file_path_for_downloads=file_path_for_downloads,
             max_concurrency=20,
             skip_existing=True,
             retries=3,
             backoff_seconds=0.5,
+            endpoint_url = endpoint_url,
+            signature_version = signature_version,
             output_csv_path=file_path_for_csv
       )
+
+      print(df.head())
+      print(df.count())
       
 if __name__ == "__main__":
       main()
