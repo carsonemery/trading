@@ -16,6 +16,7 @@ def get_ticker_list(
 
 #tickers_list = get_ticker_list()
 
+# currently testing the endpoint on these tickers
 tickers_list = ['META', 'BLL', 'BALL',
                 'FB', 'AI', 'T', 'PTWO',
                 'SBC', 'TWX', 'AOL',
@@ -47,6 +48,7 @@ def get_events(tickers_list: []):
                 'events': getattr(events, 'events', [])
             }
             list_of_events.append(event_dict)
+        # Catch failed requests and append it to a list for logging and investigation    
         except BadResponse as e:
             print(f"BadResponse for {ticker}: {e}")
             list_failed_tickers.append(ticker)
@@ -84,11 +86,17 @@ def build_ticker_mapping(events_list: []):
 
 def main():
     
+    # Get the list of unique tickers 
+    # complete_ticker_list = get_ticker_list()
+
     # Get the list of ticker events and failed tickers
     list_of_events, list_failed_tickers = get_events(tickers_list)
 
-    print(f"Events: {len(list_of_events)}")
-    print(f"Failed: {list_failed_tickers}")
+    print(f"Count of Returned Events: {len(list_of_events)}")
+    print(f"Count of Failed Tickers: {len(list_failed_tickers)}")
+    # Check the percent of tickers that failed compared to the original unique tickers list
+    # percentFailed = len(list_failed_tickers) / len(complete_ticker_list)
+    # print(f"Percent failed in dataset: {percentFailed}")
 
     # Build a ticker mapping
     reverse_mapping = build_ticker_mapping(list_of_events)

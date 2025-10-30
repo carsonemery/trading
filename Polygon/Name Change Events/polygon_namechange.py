@@ -23,7 +23,7 @@ def map_symbols(
         rows_symbol = row['symbol']
         rows_date = row['date']
 
-        # Call helper function map_row() to get the actively traded symbol for this row based on the 
+        # Call helper function to get the actively traded symbol for this row based on the 
         # reverse lookup dictionary
         current_ticker = get_current_ticker_for_historical_date(rows_symbol, rows_date, reverse_mapping)
 

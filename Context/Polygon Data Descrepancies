@@ -1,0 +1,157 @@
+
+
+DVLT Ticker Events
+{
+  "results": {
+    "name": "Datavault AI Inc. Common Stock",
+    "composite_figi": "BBG00KLHTJY4",
+    "cik": "0001682149",
+    "events": [
+      {
+        "ticker_change": {
+          "ticker": "DVLT"
+        },
+        "type": "ticker_change",
+        "date": "2025-02-14"
+      },
+      {
+        "ticker_change": {
+          "ticker": "WISA"
+        },
+        "type": "ticker_change",
+        "date": "2024-04-15"
+      }
+    ]
+  },
+  "status": "OK",
+  "request_id": "30e384879707ac9fb67f24f3bde4bc79"
+}
+
+DVLT Splits
+{
+    "results": [],
+    "status": "OK",
+    "request_id": "6e654c49b14c60a0aebe6d38e45efb3b"
+  }
+WISA Splits
+{
+    "results": [
+      {
+        "execution_date": "2020-04-09",
+        "id": "E7b1f6887f3147ab6e6347384fca9ad47be51884fca333f43bda4f6d49e4e4f1d",
+        "split_from": 20,
+        "split_to": 1,
+        "ticker": "WISA"
+      },
+      {
+        "execution_date": "2023-01-27",
+        "id": "E2627452b1669394d9ecb29201129fe67462d5d29e03fde3cae3791d727348b6b",
+        "split_from": 100,
+        "split_to": 1,
+        "ticker": "WISA"
+      },
+      {
+        "execution_date": "2024-04-15",
+        "id": "E765712ebcecea4788540305ed93825ebae4a09e94714bf90a1518327a8a31337",
+        "split_from": 150,
+        "split_to": 1,
+        "ticker": "WISA"
+      }
+    ],
+    "status": "OK",
+    "request_id": "e28529b62cc938d7423f99a812da4219"
+  }
+
+  BALL Ticker Events 
+  {
+    "results": {
+      "name": "Ball Corporation",
+      "composite_figi": "BBG000BDDNH5",
+      "cik": "0000009389",
+      "events": [
+        {
+          "ticker_change": {
+            "ticker": "BALL"
+          },
+          "type": "ticker_change",
+          "date": "2022-05-10"
+        },
+        {
+          "ticker_change": {
+            "ticker": "BLL"
+          },
+          "type": "ticker_change",
+          "date": "2003-09-10"
+        }
+      ]
+    },
+    "status": "OK",
+    "request_id": "c76181b437dff2216de029216f9e6b8c"
+  }
+
+BALL Splits
+{
+    "results": [
+      {
+        "execution_date": "2004-08-24",
+        "id": "E5b0caf1249ad69a553332b2bb7f7086c782b835238ddbda9d88e34355b4e362f",
+        "split_from": 1,
+        "split_to": 2,
+        "ticker": "BALL"
+      },
+      {
+        "execution_date": "2011-02-16",
+        "id": "Eba0fa2d3994f73a2192ad577bdd7544a8c4c66299fb4295a5b74bac86303e9aa",
+        "split_from": 1,
+        "split_to": 2,
+        "ticker": "BALL"
+      },
+      {
+        "execution_date": "2017-05-17",
+        "id": "Eb10a36e3f319c89d3c254fc4e396fc562750311520179877b975ad2c3edfea74",
+        "split_from": 1,
+        "split_to": 2,
+        "ticker": "BALL"
+      }
+    ],
+    "status": "OK",
+    "request_id": "5c6f9c565d30aec7d32907b8cd7251b1"
+  }
+
+BLL Splits 
+{
+    "results": [
+      {
+        "execution_date": "2004-08-24",
+        "id": "E9d9fc0b7d03f430ba6c51d7b60b8ec39a51fdfa34160e749f4e6ab5065040261",
+        "split_from": 1,
+        "split_to": 2,
+        "ticker": "BLL"
+      }
+    ],
+    "status": "OK",
+    "request_id": "ec48ed365e8b5c62259918df50262346"
+  }
+
+
+
+{ Tickers to Look into:
+NRXP - Passes
+OCGN - has had symbol change from HSGX in Sep 2019
+ - Had split under the symbol HSGX, caused by merger
+PHUN 
+MARK
+GWH
+XENE
+RCAT
+MRIN
+}
+
+
+Polygon Rep:[
+Simply put, we have used a variety of data providers for corporate actions over the years. As a result, some tickers' splits data is "merged" with the ticker the company used previously, and some is not.
+
+For example, it appears that the BLL/BALL example you provided shows the tickers "stitched" together, showing splits from before the change.
+
+You also mentioned DVLT; which was previously WISA until February of this year. If you query the Splits endpoint for DVLT (the current ticker), nothing is returned. If you use WISA, the splits are returned:
+]
