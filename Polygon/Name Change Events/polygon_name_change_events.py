@@ -12,15 +12,19 @@ def get_ticker_list(
     ) -> []:
     """ Gets all unique ticker names from entire corpus of OHCLV daily data
     """
-    return df['symbol'].unique()
+    return df['ticker'].unique()
 
 #tickers_list = get_ticker_list()
+
+# need to implement some async and rate limiting ~100 requests per seconnd per polygon rep
 
 # currently testing the endpoint on these tickers
 tickers_list = ['META', 'BLL', 'BALL',
                 'FB', 'AI', 'T', 'PTWO',
                 'SBC', 'TWX', 'AOL',
-                'WBD', 'HWP', 'HPQ']
+                'WBD', 'HWP', 'HPQ', 'NRXP',
+                'OCGN', 'PHUN', 'MARK',
+                'GWH', 'XENE', 'RCAT', 'MRIN']
 
 
 def get_events(tickers_list: []):
