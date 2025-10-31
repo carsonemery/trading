@@ -38,7 +38,8 @@ def get_current_ticker_for_historical_date(
     rows_date, 
     reverse_mapping
     ) -> str:
-    """
+    """ Uses the reverse_mapping dictionary to map the current rows symbol/date to its currently traded symbol
+    returns that symbol
     """
 
     # Default the current_ticker to original symbol if we do not find anything
