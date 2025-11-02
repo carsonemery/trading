@@ -1,4 +1,3 @@
-from re import I
 from polygon import RESTClient
 import os
 from dotenv import load_dotenv
