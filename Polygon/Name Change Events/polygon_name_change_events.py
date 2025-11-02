@@ -7,6 +7,8 @@ import pandas as pd
 import asyncio 
 from typing import List, Tuple, Dict, Any
 from rich import print
+from tqdm import tqdm
+from tqdm.asyncio import tqdm
 
 load_dotenv()
 client = RESTClient(os.getenv("POLYGON_API_KEY"))
@@ -19,7 +21,7 @@ def get_ticker_list(
     return df['ticker'].unique()
 
 async def process_tickers(
-    tickers_list: List[str]) -> Tuple[List[Dict[str, Any]]]:
+    tickers_list: List[str]):
     """
     Get ticker events for a list of tickers and handle errors properly.
     Returns tuple of (successful_events, failed_tickers) which are lists.
@@ -36,7 +38,8 @@ async def process_tickers(
     tasks = [get_ticker_event(ticker, semaphore) for ticker in tickers_list]
 
     # Process with rate limiting
-    for task in asyncio.as_completed(tasks):
+    # for task in asyncio.as_completed(tasks):
+    for task in tqdm.as_completed(tasks, desc="Fetching ticker events", total=len(tasks)):
         # Get the result type and data from each call
         result_type, result_data = await task
         
@@ -111,19 +114,28 @@ def build_ticker_mapping(events_list: []):
 
     return reverse_mapping
 
-def main():
+async def main():
+
+    # currently testing the endpoint on these tickers
+    tickers_list = ['META', 'BLL', 'BALL',
+                    'FB', 'AI', 'T', 'PTWO',
+                    'SBC', 'TWX', 'AOL',
+                    'WBD', 'HWP', 'HPQ', 'NRXP',
+                    'OCGN', 'PHUN', 'MARK',
+                    'GWH', 'XENE', 'RCAT', 'MRIN',
+                    'HSGX']
     
     # Get the list of unique tickers 
-    # complete_ticker_list = get_ticker_list()
+    # tickers_list = get_ticker_list()
 
     # Get the list of ticker events and failed tickers
-    list_of_events, list_failed_tickers = get_events(tickers_list)
+    list_of_events, list_failed_tickers = await process_tickers(tickers_list)
 
     print(f"Count of Returned Events: {len(list_of_events)}")
     print(f"Count of Failed Tickers: {len(list_failed_tickers)}")
     # Check the percent of tickers that failed compared to the original unique tickers list
-    # percentFailed = len(list_failed_tickers) / len(complete_ticker_list)
-    # print(f"Percent failed in dataset: {percentFailed}")
+    percentFailed = len(list_failed_tickers) / len(tickers_list)
+    print(f"Percent failed in dataset: {percentFailed * 100:.2f}%")
 
     # Build a ticker mapping
     reverse_mapping = build_ticker_mapping(list_of_events)
@@ -131,7 +143,7 @@ def main():
         print(f"Mapping: {key, value}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
 
 
 # #tickers_list = get_ticker_list()

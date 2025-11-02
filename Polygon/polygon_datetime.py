@@ -10,15 +10,13 @@ import pandas as pd
 def add_datetime(
     df: pd.DataFrame) -> pd.DataFrame:
     """
-    Convert nanosecond unix timestamp to datetime object.
-    Keeps datetime as datetime (not string) for proper comparison with events/splits dates.
-    Optionally adds a string-formatted column if needed.
+    Convert nanosecond unix timestamp to pandas datetime object.
+    Keeps as pandas datetime64[ns] (normalized to date) for pandas operations 
+    and proper comparison with events/splits dates.
     """
-    # Convert to datetime object (keep as datetime, not string) for comparisons
-    df['date'] = pd.to_datetime(df['window_start'], unit='ns').dt.date
-    
-    # Optional: Add string format column if we need it for display/export
-    # df['date_str'] = pd.to_datetime(df['window_start'], unit='ns').dt.strftime('%Y-%m-%d')
+    # Convert to pandas datetime and normalize to date (removes time component)
+    # Keeping as pandas datetime (not Python date) for pandas operations like .dt.year
+    df['date'] = pd.to_datetime(df['window_start'], unit='ns').dt.normalize()
     
     # Reorder columns to put 'date' first
     cols = ['date'] + [col for col in df.columns if col != 'date']
