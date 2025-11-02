@@ -1,8 +1,12 @@
+from numpy import result_type
 from polygon import RESTClient
 import os
 from dotenv import load_dotenv
 from polygon.exceptions import BadResponse
 import pandas as pd
+import asyncio 
+from typing import List, Tuple, Dict, Any
+from rich import print
 
 load_dotenv()
 client = RESTClient(os.getenv("POLYGON_API_KEY"))
@@ -14,20 +18,8 @@ def get_ticker_list(
     """
     return df['ticker'].unique()
 
-#tickers_list = get_ticker_list()
-
-# need to implement some async and rate limiting ~100 requests per seconnd per polygon rep
-
-# currently testing the endpoint on these tickers
-tickers_list = ['META', 'BLL', 'BALL',
-                'FB', 'AI', 'T', 'PTWO',
-                'SBC', 'TWX', 'AOL',
-                'WBD', 'HWP', 'HPQ', 'NRXP',
-                'OCGN', 'PHUN', 'MARK',
-                'GWH', 'XENE', 'RCAT', 'MRIN']
-
-
-def get_events(tickers_list: []):
+async def process_tickers(
+    tickers_list: List[str]) -> Tuple[List[Dict[str, Any]]]:
     """
     Get ticker events for a list of tickers and handle errors properly.
     Returns tuple of (successful_events, failed_tickers) which are lists.
@@ -35,9 +27,42 @@ def get_events(tickers_list: []):
     list_of_events = []
     list_failed_tickers = []
 
-    for ticker in tickers_list:
+    # Limit concurrency with a semaphore and use a 0.01 second or 10ms space 
+    # between requests to stay under 100 requests per second
+    semaphore = asyncio.Semaphore(20)
+    rate_limit_delay = 0.01
+
+    # Create tasks for all tickers
+    tasks = [get_ticker_event(ticker, semaphore) for ticker in tickers_list]
+
+    # Process with rate limiting
+    for task in asyncio.as_completed(tasks):
+        # Get the result type and data from each call
+        result_type, result_data = await task
+        
+        # If the result was success append to list_of_events
+        if result_type == "success":
+            list_of_events.append(result_data)
+        else: 
+            list_failed_tickers.append(result_data)
+
+        # Basic rate limiting to stay under 100 req/sec
+        await asyncio.sleep(rate_limit_delay)
+    
+    return list_of_events, list_failed_tickers
+
+async def get_ticker_event(
+    ticker: str, 
+    semaphore: asyncio.Semaphore
+    ) -> Tuple[str, Any]:
+    """
+    Processes and returns the info from one ticker event at a time
+    Returns tuple: ("success", event_dict) or ("failed", ticker)
+    """
+    async with semaphore:
         try:
-            events = client.get_ticker_events(ticker)
+            # Runt the synchronous RESTClient call in a thread
+            events = await asyncio.to_thread(client.get_ticker_events, ticker)
             # Construct and event dictionary which holds:
                 # 1) the ticker we passed in 
                 # 2) the name of the event (should simply be events)
@@ -51,13 +76,11 @@ def get_events(tickers_list: []):
                 'cik': getattr(events, 'cik', None),
                 'events': getattr(events, 'events', [])
             }
-            list_of_events.append(event_dict)
-        # Catch failed requests and append it to a list for logging and investigation    
+            return ("success", event_dict)
+        # Catch the failed requests to track which tickers we did not get any name change info from    
         except BadResponse as e:
             print(f"BadResponse for {ticker}: {e}")
-            list_failed_tickers.append(ticker)
-
-    return list_of_events, list_failed_tickers
+            return ("failed", ticker)
         
 def build_ticker_mapping(events_list: []):
     """
@@ -109,3 +132,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# #tickers_list = get_ticker_list()
+
+# # need to implement some async and rate limiting ~100 requests per seconnd per polygon rep
+
+# # currently testing the endpoint on these tickers
+# tickers_list = ['META', 'BLL', 'BALL',
+#                 'FB', 'AI', 'T', 'PTWO',
+#                 'SBC', 'TWX', 'AOL',
+#                 'WBD', 'HWP', 'HPQ', 'NRXP',
+#                 'OCGN', 'PHUN', 'MARK',
+#                 'GWH', 'XENE', 'RCAT', 'MRIN']
