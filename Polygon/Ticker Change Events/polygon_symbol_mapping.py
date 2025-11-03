@@ -45,11 +45,10 @@ def get_current_ticker_for_historical_date(
     # Default the current_ticker to original symbol if we do not find anything
     current_ticker = rows_symbol
 
-    for maping_key, maping_list in reverse_mapping.values():
+    for maping_key, maping_list in reverse_mapping.items():
         for item in maping_list:
-            # These are from the tuples
-            historical_ticker = item[0]
-            change_date = item[1]
+            # These are from the tuples, unpacking syntax for tuples
+            historical_ticker, change_date = item
 
             # If the ticker of the tuple is equal to the symbol we are checking from the dataframe, and
             # the date of ticker change is less than the date of the current row, update the current_ticker

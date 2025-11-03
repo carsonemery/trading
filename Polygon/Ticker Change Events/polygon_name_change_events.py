@@ -1,3 +1,4 @@
+from datetime import date
 from numpy import result_type
 from polygon import RESTClient
 import os
@@ -100,12 +101,15 @@ def build_ticker_mapping(events_list: []):
         events = event_data.get('events', [])
 
         # Create a list to store the historical tickers
-        historical_tickers =[]
+        historical_tickers = []
         
         # Add all historical tickers from events
         for event in events:
             historical_ticker = event.get('ticker_change', {}).get('ticker')
             historical_date = event.get('date')
+            if len(events) <= 1:
+                # If there is only one event returned in the 
+                historical_date = date # need to fix
             if historical_ticker:
                 # Add the historical ticker to a list of all historical tickers (including the current ticker)
                 historical_tickers.append((historical_ticker, historical_date))
@@ -145,15 +149,17 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
+    # #tickers_list = get_ticker_list()
 
-# #tickers_list = get_ticker_list()
+    # # need to implement some async and rate limiting ~100 requests per seconnd per polygon rep
 
-# # need to implement some async and rate limiting ~100 requests per seconnd per polygon rep
+    # # currently testing the endpoint on these tickers
+    # tickers_list = ['META', 'BLL', 'BALL',
+    #                 'FB', 'AI', 'T', 'PTWO',
+    #                 'SBC', 'TWX', 'AOL',
+    #                 'WBD', 'HWP', 'HPQ', 'NRXP',
+    #                 'OCGN', 'PHUN', 'MARK',
+    #                 'GWH', 'XENE', 'RCAT', 'MRIN']
 
-# # currently testing the endpoint on these tickers
-# tickers_list = ['META', 'BLL', 'BALL',
-#                 'FB', 'AI', 'T', 'PTWO',
-#                 'SBC', 'TWX', 'AOL',
-#                 'WBD', 'HWP', 'HPQ', 'NRXP',
-#                 'OCGN', 'PHUN', 'MARK',
-#                 'GWH', 'XENE', 'RCAT', 'MRIN']
+
+
