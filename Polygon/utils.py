@@ -1,12 +1,5 @@
 import pandas as pd
 
-# Sole purpose of this file and function is providing a method which adds a datetime column to a dataframe that contains unix nanosecond time stamps
-# Polygons exact definition: 
-############################
-# # window_start
-# timestamp - integer
-# The Unix nanosecond timestamp for the start of the aggregate window.
-
 def add_datetime(
     df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -21,4 +14,3 @@ def add_datetime(
     # Reorder columns to put 'date' first
     cols = ['date'] + [col for col in df.columns if col != 'date']
     return df[cols]
-
