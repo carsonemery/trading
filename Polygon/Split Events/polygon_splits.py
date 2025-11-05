@@ -8,6 +8,8 @@ import asyncio
 from rich import print
 from tqdm.asyncio import tqdm
 from typing import List, Tuple, Any
+import pandas as pd
+from dataclasses import asdict
 
 load_dotenv()
 client = RESTClient(os.getenv("POLYGON_API_KEY"))
@@ -124,16 +126,21 @@ async def main():
     #     print(f"split_to: {first_split.split_to} -> type: {type(first_split.split_to)}")
     #     print(f"id: {first_split.id} -> type: {type(first_split.id)}")
     #     print("=" * 50 + "\n")
-    
-    for split in list_of_splits:
-        print(split)
-        print(type(split))
-    #     # They're actual objects, not strings! You can access attributes:
-    #     print(f"  Ticker: {split.ticker}, Date: {split.execution_date}, Split: {split.split_from}:{split.split_to}")
 
-    for no_split in list_of_failures:
-        print(no_split)
-        print(len(no_split))
+    # Convert the splits into a data frame
+    splits_df = pd.DataFrame(asdict(split) for split in list_of_splits)
+
+    print(splits_df)
+    
+    # for split in list_of_splits:
+    #     print(split)
+    #     print(type(split))
+    # #     # They're actual objects, not strings! You can access attributes:
+    # #     print(f"  Ticker: {split.ticker}, Date: {split.execution_date}, Split: {split.split_from}:{split.split_to}")
+
+    # for no_split in list_of_failures:
+    #     print(no_split)
+    #     print(len(no_split))
     
 if __name__ == "__main__":
     asyncio.run(main())
