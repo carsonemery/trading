@@ -14,13 +14,6 @@ from tqdm.asyncio import tqdm
 load_dotenv()
 client = RESTClient(os.getenv("POLYGON_API_KEY"))
 
-def get_ticker_list(
-    df: pd.DataFrame
-    ) -> []:
-    """ Gets all unique ticker names from entire corpus of OHCLV daily data
-    """
-    return df['ticker'].unique()
-
 async def process_tickers(
     tickers_list: List[str]):
     """
@@ -29,6 +22,9 @@ async def process_tickers(
     """
     list_of_events = []
     list_failed_tickers = []
+    # We also want to track and return a set of each ticker we have successfully processed through the API, using this to track what tickers we 
+    # need to send in the future to complete our data set or resume a cancelled or failed request
+    set_of_processed_tickers = {}
 
     # Limit concurrency with a semaphore and use a 0.01 second or 10ms space 
     # between requests to stay under 100 requests per second
@@ -37,7 +33,7 @@ async def process_tickers(
 
     # Create tasks for all tickers
     tasks = [get_ticker_event(ticker, semaphore) for ticker in tickers_list]
-
+   
     # Process with rate limiting
     # for task in asyncio.as_completed(tasks):
     for task in tqdm.as_completed(tasks, desc="Fetching ticker events", total=len(tasks)):
@@ -46,8 +42,13 @@ async def process_tickers(
         
         # If the result was success append to list_of_events
         if result_type == "success":
+            # Want to save each result_data event as well during the run incase we drop off or want to avoid calling the API again 
+            # print(f"PRINTING WHAT AN RESULT_DATA EVENT LOOKS LIKE: {result_data}")
+            # will be implementing later in development
+
+            # Add to our list of events list
             list_of_events.append(result_data)
-        else: 
+        else:
             list_failed_tickers.append(result_data)
 
         # Basic rate limiting to stay under 100 req/sec
@@ -109,7 +110,7 @@ def build_ticker_mapping(events_list: []):
             historical_date = event.get('date')
             if len(events) <= 1:
                 # If there is only one event returned in the 
-                historical_date = date # need to fix
+                historical_date = date.today().strftime('%Y-%m-%d')
             if historical_ticker:
                 # Add the historical ticker to a list of all historical tickers (including the current ticker)
                 historical_tickers.append((historical_ticker, historical_date))
@@ -117,6 +118,31 @@ def build_ticker_mapping(events_list: []):
         reverse_mapping[current_ticker] = historical_tickers
 
     return reverse_mapping
+
+# async def atomic_checkpoint(
+#     path, 
+#     events, 
+#     failed, 
+#     processed_set):
+#     """
+#     """
+#     temp_files = []
+#     try:
+#         # Write all three to temp files
+#         await write_temp_file(f"{path} + events.jsonl.tmp", events)
+#         await write_temp_file("failed_tickers.jsonl.tmp", failed)
+#         await write_temp_file("processed_tickers.json.tmp", processed_set)
+        
+#         # If all succeed, rename (atomic on most OS)
+#         rename("events.jsonl.tmp", "events.jsonl")
+#         rename("failed_tickers.jsonl.tmp", "failed_tickers.jsonl")
+#         rename("processed_tickers.json.tmp", "processed_tickers.json")
+    
+#     except Exception:
+#             # Clean up temp files on failure
+#             delete_all_temp_files()
+#             raise
+
 
 async def main():
 
@@ -149,17 +175,6 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
-    # #tickers_list = get_ticker_list()
-
-    # # need to implement some async and rate limiting ~100 requests per seconnd per polygon rep
-
-    # # currently testing the endpoint on these tickers
-    # tickers_list = ['META', 'BLL', 'BALL',
-    #                 'FB', 'AI', 'T', 'PTWO',
-    #                 'SBC', 'TWX', 'AOL',
-    #                 'WBD', 'HWP', 'HPQ', 'NRXP',
-    #                 'OCGN', 'PHUN', 'MARK',
-    #                 'GWH', 'XENE', 'RCAT', 'MRIN']
 
 
 

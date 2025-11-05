@@ -28,9 +28,9 @@ def map_symbols(
         # reverse lookup dictionary
         current_ticker = get_current_ticker_for_historical_date(rows_symbol, rows_date, reverse_mapping)
 
-        mapped_data.at[index, 'current_ticker'] = current_ticker
+        mapped_data.at[index, 'adjusted_ticker'] = current_ticker
     
-    return mapped_data 
+    return mapped_data
 
 
 def get_current_ticker_for_historical_date(
