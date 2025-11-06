@@ -7,6 +7,8 @@ def map_splits(
     """
     """
 
+    df_copy = historical_data.copy()
+
     
 
     return

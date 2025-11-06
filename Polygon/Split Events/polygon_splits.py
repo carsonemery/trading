@@ -112,9 +112,26 @@ async def get_split_events(
 
 async def main():
 
-    tickers_list = ['TSLA', 'AAPL', 'DRYS', 'TOPS']
+    tickers_list = ['TSLA'] # 'DRYS', 'TOPS']
+
+    # pull in OHLCV data for a select number of stocks to test
+    parquet_path = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_HISTORICAL_2016_2025.parquet'
+    test_df = pd.read_parquet(parquet_path)
+
+    filtered_df = test_df[test_df['ticker'].isin(['CYCC'])]
+
+    print(filtered_df)
+    print("=== Checking Specific Dates Data ===")
+
+    
+    mask = filtered_df['date'] == '2025-07-03'
+    print(filtered_df[mask])
+
+    mask2 = filtered_df['date'] == '2025-07-07'
+    print(filtered_df[mask2])
 
     list_of_splits, list_of_failures = await process_tickers(tickers_list)
+
 
     # # Inspect the actual types returned by Polygon
     # if list_of_splits:
@@ -144,3 +161,27 @@ async def main():
     
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+# Process to adjust
+
+# Assuming splits are sorted oldest to newest, but we apply cumulatively from newest backward
+# For each split, compute factor once, then apply to all data before its date
+
+# General formula (same for forward and reverse):
+# adjustment_factor_prices = split_from / split_to
+# adjustment_factor_vol = split_to / split_from
+
+# For data strictly prior to split date (up to but not including split date),
+# and back to next prior split or dataset start:
+# adjusted_prices = prices * adjustment_factor_prices
+# adjusted_vol = vol * adjustment_factor_vol
+
+# Example: Forward split (e.g., TSLA 5-for-1: split_from=1, split_to=5)
+# factor_prices = 1/5 = 0.2 → historical prices *= 0.2 (lower)
+# factor_vol = 5/1 = 5 → historical vol *= 5 (higher)
+# Note: Your 'data / split_to' works if split_from=1 (common for forwards), as /5 == * (1/5), but use general formula for robustness.
+
+# Example: Reverse split (e.g., CYCC 1-for-15: split_from=15, split_to=1)
+# factor_prices = 15/1 = 15 → historical prices *= 15 (higher)
+# factor_vol = 1/15 ≈ 0.0667 → historical vol *= 0.0667 (lower)
