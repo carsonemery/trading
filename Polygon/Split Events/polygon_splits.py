@@ -10,6 +10,12 @@ from tqdm.asyncio import tqdm
 from typing import List, Tuple, Any
 import pandas as pd
 from dataclasses import asdict
+import sys
+import json
+
+# Add parent directory to path to import utils module
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils import add_datetime
 
 load_dotenv()
 client = RESTClient(os.getenv("POLYGON_API_KEY"))
@@ -112,26 +118,39 @@ async def get_split_events(
 
 async def main():
 
-    tickers_list = ['TSLA'] # 'DRYS', 'TOPS']
-
     # pull in OHLCV data for a select number of stocks to test
-    parquet_path = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_HISTORICAL_2016_2025.parquet'
-    test_df = pd.read_parquet(parquet_path)
+    csv_path = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\OHLCV_Historical_2016-01-01_to_2025-10-26.csv'
+    test_df = pd.read_csv(csv_path) # If I want to change the range I need to change the file path or delete the file
 
-    filtered_df = test_df[test_df['ticker'].isin(['CYCC'])]
+    parquet_path = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_SPLITS_2016_2025.parquet'
+    test_splits = pd.read_parquet(parquet_path)
 
-    print(filtered_df)
-    print("=== Checking Specific Dates Data ===")
+    print(test_splits.head())
 
+    # mask = test_splits['ticker'] == 'TSLA'
+
+    # print(test_splits[mask])
+
+    # # Add date time 'date'
+    # test_df = add_datetime(test_df)
     
-    mask = filtered_df['date'] == '2025-07-03'
-    print(filtered_df[mask])
+    # # Get unique tickers
+    # tickers_list = test_df['ticker'].unique()
 
-    mask2 = filtered_df['date'] == '2025-07-07'
-    print(filtered_df[mask2])
+    # # Call API
+    # list_of_splits, list_of_failures = await process_tickers(tickers_list)
 
-    list_of_splits, list_of_failures = await process_tickers(tickers_list)
+    # # Convert the splits into a data frame
+    # splits_df = pd.DataFrame(asdict(split) for split in list_of_splits)
 
+    # # Save the splits dataframe
+    # parquet_path = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_SPLITS_2016_2025.parquet'
+    # splits_df.to_parquet(parquet_path)
+
+    # # Save the list of failures
+    # failures_path = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_SPLITS_FAILURES_2016_2025.json'
+    # with open(failures_path, 'w') as f:
+    #     json.dump(list_of_failures, f, indent=2)
 
     # # Inspect the actual types returned by Polygon
     # if list_of_splits:
@@ -144,10 +163,15 @@ async def main():
     #     print(f"id: {first_split.id} -> type: {type(first_split.id)}")
     #     print("=" * 50 + "\n")
 
-    # Convert the splits into a data frame
-    splits_df = pd.DataFrame(asdict(split) for split in list_of_splits)
 
-    print(splits_df)
+    # SHORT TEST
+    # tickers_list = ['TSLA']
+
+    # list_of_splits, list_of_failures = await process_tickers(tickers_list)
+
+    # print(list_of_splits)
+    # print(list_of_failures)
+
     
     # for split in list_of_splits:
     #     print(split)
@@ -163,25 +187,3 @@ if __name__ == "__main__":
     asyncio.run(main())
 
 
-# Process to adjust
-
-# Assuming splits are sorted oldest to newest, but we apply cumulatively from newest backward
-# For each split, compute factor once, then apply to all data before its date
-
-# General formula (same for forward and reverse):
-# adjustment_factor_prices = split_from / split_to
-# adjustment_factor_vol = split_to / split_from
-
-# For data strictly prior to split date (up to but not including split date),
-# and back to next prior split or dataset start:
-# adjusted_prices = prices * adjustment_factor_prices
-# adjusted_vol = vol * adjustment_factor_vol
-
-# Example: Forward split (e.g., TSLA 5-for-1: split_from=1, split_to=5)
-# factor_prices = 1/5 = 0.2 → historical prices *= 0.2 (lower)
-# factor_vol = 5/1 = 5 → historical vol *= 5 (higher)
-# Note: Your 'data / split_to' works if split_from=1 (common for forwards), as /5 == * (1/5), but use general formula for robustness.
-
-# Example: Reverse split (e.g., CYCC 1-for-15: split_from=15, split_to=1)
-# factor_prices = 15/1 = 15 → historical prices *= 15 (higher)
-# factor_vol = 1/15 ≈ 0.0667 → historical vol *= 0.0667 (lower)

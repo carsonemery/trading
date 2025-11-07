@@ -8,10 +8,9 @@ import asyncio
 from tqdm import tqdm
 from tqdm.asyncio import tqdm
 
-# Add parent directory to path to import polygon_datetime module and
-# Import datetime conversion function from Polygon/polygon_datetime.py
+# Add parent directory to path to import utils module
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from polygon_datetime import add_datetime
+from utils import add_datetime
 
 # Import functions from polygon_name_change_events.py
 from polygon_name_change_events import process_tickers, build_ticker_mapping, get_ticker_list, process_tickers
@@ -61,28 +60,28 @@ async def main():
     # Print to verify structure
     print(test_df.head())
 
-    # Count rows per year 
-    rows_per_year = test_df.groupby(test_df['date'].dt.year).size()
-    print("\nRows per year:")
-    print(rows_per_year)
-    print(f"\nTotal rows: {rows_per_year.sum():,}")
+    # # Count rows per year 
+    # rows_per_year = test_df.groupby(test_df['date'].dt.year).size()
+    # print("\nRows per year:")
+    # print(rows_per_year)
+    # print(f"\nTotal rows: {rows_per_year.sum():,}")
 
-    ### =============== Step 3 ========================= ###
-    # Get list of unique tickers in the historical time period 
-    unique_tickers = get_ticker_list(test_df)
+    # ### =============== Step 3 ========================= ###
+    # # Get list of unique tickers in the historical time period 
+    # unique_tickers = get_ticker_list(test_df)
     
-    print(f"Number of unique tickers {len(unique_tickers)}")
+    # print(f"Number of unique tickers {len(unique_tickers)}")
     
-    # ### =============== Step 4 ========================= ###
-    # # Call get_events to get the name change events for each ticker from Polygon
-    events_list, failed_tickers = await process_tickers(unique_tickers)
+    # # ### =============== Step 4 ========================= ###
+    # # # Call get_events to get the name change events for each ticker from Polygon
+    # events_list, failed_tickers = await process_tickers(unique_tickers)
 
-    # PRINT SOME STATS
-    print(f"Count of Returned Events: {len(events_list)}")
-    print(f"Count of Failed Tickers: {len(failed_tickers)}")
-    # Check the percent of tickers that failed compared to the original unique tickers list
-    percentFailed = len(failed_tickers) / len(unique_tickers)
-    print(f"Percent failed in dataset: {percentFailed}")
+    # # PRINT SOME STATS
+    # print(f"Count of Returned Events: {len(events_list)}")
+    # print(f"Count of Failed Tickers: {len(failed_tickers)}")
+    # # Check the percent of tickers that failed compared to the original unique tickers list
+    # percentFailed = len(failed_tickers) / len(unique_tickers)
+    # print(f"Percent failed in dataset: {percentFailed}")
 
     # # ### =============== Step 5 ========================= ###
     # # # Build the reverse mapping dictionary with the events
