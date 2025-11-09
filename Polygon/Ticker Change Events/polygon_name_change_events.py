@@ -10,6 +10,8 @@ from typing import List, Tuple, Dict, Any
 from rich import print
 from tqdm import tqdm
 from tqdm.asyncio import tqdm
+import pickle
+from pathlib import Path
 
 load_dotenv()
 client = RESTClient(os.getenv("POLYGON_API_KEY"))
@@ -161,6 +163,8 @@ async def main():
     # Get the list of ticker events and failed tickers
     list_of_events, list_failed_tickers = await process_tickers(tickers_list)
 
+    print(type(list_of_events))
+
     print(f"Count of Returned Events: {len(list_of_events)}")
     print(f"Count of Failed Tickers: {len(list_failed_tickers)}")
     # Check the percent of tickers that failed compared to the original unique tickers list
@@ -169,8 +173,24 @@ async def main():
 
     # Build a ticker mapping
     reverse_mapping = build_ticker_mapping(list_of_events)
-    for key, value in reverse_mapping.items():
-        print(f"Mapping: {key, value}")
+
+    # Save the reverse mapping with a pickle file
+    reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
+
+    # Create the directory if it doesnt exist 
+    reverse_mapping_filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(reverse_mapping_filepath, 'wb') as f:
+        pickle.dump(reverse_mapping, f)
+
+    # @TODO We might want to add specific testing on map_symbols
+
+    # Load the reverse mapping and print it out to confirm strtucure (for my testing and understanding of how pickle works)
+    # with open(reverse_mapping_filepath, 'rb') as of:
+    #     reverse_mapping_reloaded = pickle.load(of)
+
+    # for key, value in reverse_mapping_reloaded.items():
+    #     print(f"Mapping: {key, value}")
 
 if __name__ == "__main__":
     asyncio.run(main())
