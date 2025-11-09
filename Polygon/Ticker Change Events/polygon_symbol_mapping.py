@@ -18,10 +18,11 @@ def map_symbols(
         Takes a symbol mapping dictionary and dataframe and returns the dataframe with a mapped symbols column
     """
 
-    mapped_data = pd.DataFrame()
+    # Copy the original dataframe to preserve all columns
+    mapped_data = historical_data.copy()
 
-    for index, row in historical_data.iterows():
-        rows_symbol = row['symbol']
+    for index, row in historical_data.iterrows():
+        rows_symbol = row['ticker']
         rows_date = row['date']
 
         # Call helper function to get the actively traded symbol for this row based on the 

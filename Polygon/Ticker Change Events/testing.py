@@ -7,13 +7,15 @@ from polygon.exceptions import BadResponse
 import asyncio
 from tqdm import tqdm
 from tqdm.asyncio import tqdm
+import pickle
+from pathlib import Path
 
 # Add parent directory to path to import utils module
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils import add_datetime
 
 # Import functions from polygon_name_change_events.py
-from polygon_name_change_events import process_tickers, build_ticker_mapping, get_ticker_list, process_tickers
+from polygon_name_change_events import process_tickers, build_ticker_mapping, get_ticker_event, process_tickers
 
 # Import functions from polygon_symbol_mapping.py
 from polygon_symbol_mapping import map_symbols, get_current_ticker_for_historical_date
@@ -30,35 +32,36 @@ async def main():
     ### =============== Step 1 ========================= ###
     # Load in dataframe with historical data
     csv_path = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\OHLCV_Historical_2016-01-01_to_2025-10-26.csv'
-    parquet_path = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_HISTORICAL_2016_2025.parquet'
+    # This path starts around 2021 data
+    parquet_path_2021 = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_HISTORICAL_2016_2025.parquet'
 
-    if os.path.exists(parquet_path):
-        print("Loading from Parquet (fast)...")
-        test_df = pd.read_parquet(parquet_path)
-    else:
-        print("Loading from CSV (slow, will save to Parquet for next time)...")
-        # Read in the last ~8M/9M rows with the most recent data for testing
-        test_df = pd.read_csv(csv_path, skiprows=range(1, 12_000_001)) # If I want to change the range I need to change the file path or delete the file
-        test_df = add_datetime(test_df)
-        test_df.to_parquet(parquet_path)
-        print(f"Saved to {parquet_path} for faster loading next time")
+    # if os.path.exists(parquet_path):
+    #     print("Loading from Parquet (fast)...")
+    #     test_df = pd.read_parquet(parquet_path)
+    # else:
+    #     print("Loading from CSV (slow, will save to Parquet for next time)...")
+    #     # Read in the last ~8M/9M rows with the most recent data for testing
+    #     test_df = pd.read_csv(csv_path, skiprows=range(1, 12_000_001)) # If I want to change the range I need to change the file path or delete the file
+    #     test_df = add_datetime(test_df)
+    #     test_df.to_parquet(parquet_path)
+    #     print(f"Saved to {parquet_path} for faster loading next time")
 
-    # test_df = pd.read_csv(csv_path, skiprows=range(1, 12_000_001))
+    OHLCV_data = pd.read_csv(csv_path)
 
     # If we want a certain number of rows or range or rows we could try to count the total without 
     # actually counting or observing data, then use the total to inform the split, we are currently 
     # pulling the most historical data
 
     # PRINT SOME STATS
-    print(f"Loaded {len(test_df)} rows for testing")
-    print(f"Sample of loaded data:\n{test_df.head()}")
+    print(f"Loaded {len(OHLCV_data)} rows for testing")
+    print(f"Sample of loaded data:\n{OHLCV_data.head()}")
 
     ### =============== Step 2 ========================= ###
     # Create a datetime column in the first position
-    test_df = add_datetime(test_df)
+    OHLCV_data = add_datetime(OHLCV_data)
 
     # Print to verify structure
-    print(test_df.head())
+    print(OHLCV_data.head())
 
     # # Count rows per year 
     # rows_per_year = test_df.groupby(test_df['date'].dt.year).size()
@@ -66,14 +69,14 @@ async def main():
     # print(rows_per_year)
     # print(f"\nTotal rows: {rows_per_year.sum():,}")
 
-    # ### =============== Step 3 ========================= ###
-    # # Get list of unique tickers in the historical time period 
-    # unique_tickers = get_ticker_list(test_df)
+    ### =============== Step 3 ========================= ###
+    # Get list of unique tickers in the historical time period 
+    unique_tickers = OHLCV_data['ticker'].unique()
+
+    print(f"Number of unique tickers {len(unique_tickers)}")
     
-    # print(f"Number of unique tickers {len(unique_tickers)}")
-    
-    # # ### =============== Step 4 ========================= ###
-    # # # Call get_events to get the name change events for each ticker from Polygon
+    # ### =============== Step 4 ========================= ###
+    # Call get_events to get the name change events for each ticker from Polygon
     # events_list, failed_tickers = await process_tickers(unique_tickers)
 
     # # PRINT SOME STATS
@@ -83,17 +86,44 @@ async def main():
     # percentFailed = len(failed_tickers) / len(unique_tickers)
     # print(f"Percent failed in dataset: {percentFailed}")
 
-    # # ### =============== Step 5 ========================= ###
-    # # # Build the reverse mapping dictionary with the events
+    # ### =============== Step 5 ========================= ###
+    # Build the reverse mapping dictionary with the events
     # reverse_mapping = build_ticker_mapping(events_list)
 
-    # # ### =============== Step 6 ========================= ###
-    # # # Map a 'current_ticker' symbol to everyrow of the OHLCV dataset using 
-    # # # the reverse mapping
-    # mapped_dataframe = map_symbols(reverse_mapping, test_df)
+    # print(reverse_mapping)
+    # print(type(reverse_mapping))
 
-    # # # Print head to verify 
-    # print(mapped_dataframe.head())
+    # Save the reverse mapping with a pickle file
+    # reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
+
+    # Create the directory if it doesnt exist 
+    # reverse_mapping_filepath.parent.mkdir(parents=True, exist_ok=True)
+
+    # with open(reverse_mapping_filepath, 'wb') as f:
+    #     pickle.dump(reverse_mapping, f)
+
+    # ### =============== Step 6 ========================= ###
+    # # Map a 'current_ticker' symbol to everyrow of the OHLCV dataset using 
+    # # the reverse mapping
+    # # Load in the reverse mapping from the pickle file 
+    # with open(reverse_mapping_filepath, 'rb') as of:
+    #     reverse_mapping_reloaded = pickle.load(of)
+
+
+    # (need to reload the reversemapping from the pickle after fixing errors in map_symbols)
+
+
+    mapped_dataframe = map_symbols(reverse_mapping, OHLCV_data)
+
+    # Save mapped dataframe 
+    mapped_dataframe_path = Path(r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\OHLCV_Historical_2016-01-01_to_2025-10-26_MAPPED.parquet')
+    
+    # Create the directory if it doesnt exist and save the mapped historical data frame
+    mapped_dataframe_path.parent.mkdir(parents=True, exist_ok=True)
+    mapped_dataframe.to_parquet(mapped_dataframe_path)
+
+    # # Print head to verify 
+    print(mapped_dataframe.head())
 
 if __name__ == "__main__":
     asyncio.run(main())
