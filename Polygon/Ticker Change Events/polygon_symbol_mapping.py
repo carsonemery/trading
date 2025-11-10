@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+from tqdm import tqdm
 
 #EXAMPLE WALKTHROUGH
 # OUR MAPPING:
@@ -10,53 +12,140 @@ import pandas as pd
 # - Check FB mapping: FB appears with date '2025-06-26' <= '2020-01-01' ✗
 # - Result: Use 'META' (FB belonged to Meta in 2020)
 
-def map_symbols(
+def prepare_mapping_dataframe(
     reverse_mapping: {},
-    historical_data: pd.DataFrame
+    start_date: str
+    ) -> pd.DataFrame:
+    """ Converts the reverse_mapping dictionary into a dataframe
+
+    Format Before (Examples):
+
+    KVP:    
+        Mapping: ('DRD', [('DRD', '2012-01-03'), ('DROOY', '2007-08-20'), ('DROOD', '2007-07-23')])
+    Type: 
+        Mapping: (<class 'str'>, <class 'list'>)
+
+    KVP:
+        Mapping: ('PWRD', [('PWRD', '2025-02-03'), ('NETZ', '2022-02-03')])
+    Type:
+        Mapping: (<class 'str'>, <class 'list'>)
+
+
+    Format After:
+
+    Long format (what we want)
+    current_ticker | historical_ticker | change_date
+    DRD           | DRD               | 2012-01-03
+    DRD           | DROOY             | 2007-08-20
+    DRD           | DROOD             | 2007-07-23
+    PWRD          | PWRD              | 2025-02-03
+    PWRD          | NETZ              | 2022-02-03
+
+    """
+
+    # Convert start date to Timestamp if provided 
+    if start_date is not None:
+        start_date = pd.to_datetime(start_date).normalize()
+
+    # Create a list of dictionary objects to store the information we will convert into a dataframe
+    # this is faster than concating/appending each row to the dataframe in the loop
+    list_of_ticker_changes = []
+
+    # Add progress bar for processing ticker mappings
+    for current_ticker, history_list_of_tuples in tqdm(reverse_mapping.items(), desc="Preparing mapping dataframe", unit="ticker"):
+        
+        # Loop through each tuple in the list for this ticker
+        for historical_ticker, change_date in history_list_of_tuples:
+
+            # Convert date to Timestamp
+            if not isinstance(change_date, pd.Timestamp):
+                change_date = pd.to_datetime(change_date).normalize()
+
+            # Filter out dates (and thereby name change events) that happened
+            # before our historical OHLCV data begins (decreases the number of operations
+            # we have to do later in map_symbols)
+            if start_date is not None and change_date < start_date:
+                continue # continue will skip the tuple
+
+            # Add to our list 
+            list_of_ticker_changes.append({
+                'current_ticker': current_ticker,
+                'historical_ticker': historical_ticker,
+                'change_date': change_date
+            })
+        
+    # Convert the list 
+    mapping_df = pd.DataFrame(list_of_ticker_changes)
+
+    # Sort by historical_ticker and date (this will be important for merging)
+    # Note: Sorting is usually fast, so we don't need a progress bar here
+    mapping_df = mapping_df.sort_values(['historical_ticker', 'change_date'])
+
+    return mapping_df
+
+def map_symbols(
+    reverse_mapping_dict: {},
+    historical_data: pd.DataFrame,
+    start_date: str
     ) -> pd.DataFrame:
     """ 
-        Takes a symbol mapping dictionary and dataframe and returns the dataframe with a mapped symbols column
+        Takes a symbol mapping dataframe and OHLCV dataframe and returns the dataframe with a mapped symbols column titled 
+        'adjusted_ticker'.
     """
 
     # Copy the original dataframe to preserve all columns
-    mapped_data = historical_data.copy()
+    print("Creating copy of dataframe")
+    historical_data = historical_data.copy()
 
-    for index, row in historical_data.iterrows():
-        rows_symbol = row['ticker']
-        rows_date = row['date']
+    # convert mapping dictionary to Dataframe
+    mapping_df = prepare_mapping_dataframe(reverse_mapping_dict, start_date)
 
-        # Call helper function to get the actively traded symbol for this row based on the 
-        # reverse lookup dictionary
-        current_ticker = get_current_ticker_for_historical_date(rows_symbol, rows_date, reverse_mapping)
-
-        mapped_data.at[index, 'adjusted_ticker'] = current_ticker
+    # Sort historical_data by ticker and date for merge_asof
+    # CRITICAL: merge_asof requires the join key (date) to be sorted within each group (ticker)
+    print("Sorting historical data for merge_asof...")
+    with tqdm(total=1, desc="Sorting historical data", unit="operation") as pbar:
+        historical_data_sorted = historical_data.sort_values(['ticker', 'date'], kind='merge_sort').reset_index(drop=True)
+        pbar.update(1)
     
-    return mapped_data
+    # Also ensure mapping_df is sorted correctly
+    # It should already be sorted from prepare_mapping_dataframe, but let's be explicit
+    print("Sorting mapping dataframe...")
+    with tqdm(total=1, desc="Sorting mapping dataframe", unit="operation") as pbar:
+        mapping_df_sorted = mapping_df.sort_values(['historical_ticker', 'change_date'], kind='merge_sort').reset_index(drop=True)
+        pbar.update(1)
 
+    # Perform the merge_asof operation
+    # NOTE: merge_asof is a single atomic pandas operation, so we can't show progress during execution
+    # It's optimized C code that runs all at once. We'll just show a message.
+    print(f"Performing merge_asof on {len(historical_data_sorted):,} rows (this may take a while)...")
+    mapped_historical_data  = pd.merge_asof(
+        # Left - the ~23M rows of OHLCV data
+        historical_data_sorted,
+        # Right - ~ 90k rows of ticker changes
+        mapping_df_sorted,
 
-def get_current_ticker_for_historical_date(
-    rows_symbol, 
-    rows_date, 
-    reverse_mapping
-    ) -> str:
-    """ Uses the reverse_mapping dictionary to map the current rows symbol/date to its currently traded symbol
-    returns that symbol
-    """
+        # Join condition - Find matching dates 
+        left_on = 'date',
+        right_on='change_date',
 
-    # Default the current_ticker to original symbol if we do not find anything
-    current_ticker = rows_symbol
+        # Grouping - only match within the same ticker
+        left_by='ticker',
+        right_by='historical_ticker',
 
-    for maping_key, maping_list in reverse_mapping.items():
-        for item in maping_list:
-            # These are from the tuples, unpacking syntax for tuples
-            historical_ticker, change_date = item
+        # Direction - find the most recent change on or before this date
+        direction='backward'
+    )
+    print("Merge_asof completed!")
 
-            # If the ticker of the tuple is equal to the symbol we are checking from the dataframe, and
-            # the date of ticker change is less than the date of the current row, update the current_ticker
-            # the key of the reverse lookup
-            if (historical_ticker == rows_symbol and change_date <= rows_date):
-                current_ticker = maping_key
+    # Handle tickers with no mapping 
+    # I believe this is safe to do for now, because we filled tickers that did not return a mapping with the date 
+    # 2025-11-08, which is earlier than any date in the OHCLV dataframe so the merge_asof should have some nas we can fill
+    # with the original ticker name
+    print("Filling missing mappings and cleaning up...")
+    mapped_historical_data['adjusted_ticker'] = mapped_historical_data['current_ticker'].fillna(mapped_historical_data['ticker'])
 
-    return current_ticker
+    # Clean up temp columns
+    mapped_historical_data = mapped_historical_data.drop(columns=['historical_ticker', 'change_date', 'current_ticker'])
 
+    return mapped_historical_data
 
