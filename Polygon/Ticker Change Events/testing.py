@@ -3,12 +3,10 @@ import os
 import sys
 from dotenv import load_dotenv
 from polygon import RESTClient
-from polygon.exceptions import BadResponse
 import asyncio
-from tqdm import tqdm
-from tqdm.asyncio import tqdm
 import pickle
 from pathlib import Path
+import numpy as np
 
 # Add parent directory to path to import utils module
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -18,7 +16,7 @@ from utils import add_datetime
 from polygon_name_change_events import process_tickers, build_ticker_mapping, get_ticker_event, process_tickers
 
 # Import functions from polygon_symbol_mapping.py
-from polygon_symbol_mapping import map_symbols, get_current_ticker_for_historical_date
+from polygon_symbol_mapping import map_symbols
 
 # Load environment variables and setup client (same as polygon_name_change_events.py)
 load_dotenv()
@@ -33,7 +31,7 @@ async def main():
     # Load in dataframe with historical data
     csv_path = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\OHLCV_Historical_2016-01-01_to_2025-10-26.csv'
     # This path starts around 2021 data
-    parquet_path_2021 = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_HISTORICAL_2016_2025.parquet'
+    # parquet_path_2021 = r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_HISTORICAL_2016_2025.parquet'
 
     # if os.path.exists(parquet_path):
     #     print("Loading from Parquet (fast)...")
@@ -48,20 +46,20 @@ async def main():
 
     OHLCV_data = pd.read_csv(csv_path)
 
-    # If we want a certain number of rows or range or rows we could try to count the total without 
-    # actually counting or observing data, then use the total to inform the split, we are currently 
-    # pulling the most historical data
+    # # If we want a certain number of rows or range or rows we could try to count the total without 
+    # # actually counting or observing data, then use the total to inform the split, we are currently 
+    # # pulling the most historical data
 
-    # PRINT SOME STATS
-    print(f"Loaded {len(OHLCV_data)} rows for testing")
-    print(f"Sample of loaded data:\n{OHLCV_data.head()}")
+    # # PRINT SOME STATS
+    # print(f"Loaded {len(OHLCV_data)} rows for testing")
+    # print(f"Sample of loaded data:\n{OHLCV_data.head()}")
 
     ### =============== Step 2 ========================= ###
     # Create a datetime column in the first position
     OHLCV_data = add_datetime(OHLCV_data)
 
-    # Print to verify structure
-    print(OHLCV_data.head())
+    # # Print to verify structure
+    # print(OHLCV_data.head())
 
     # # Count rows per year 
     # rows_per_year = test_df.groupby(test_df['date'].dt.year).size()
@@ -71,9 +69,9 @@ async def main():
 
     ### =============== Step 3 ========================= ###
     # Get list of unique tickers in the historical time period 
-    unique_tickers = OHLCV_data['ticker'].unique()
+    # unique_tickers = OHLCV_data['ticker'].unique()
 
-    print(f"Number of unique tickers {len(unique_tickers)}")
+    # print(f"Number of unique tickers {len(unique_tickers)}")
     
     # ### =============== Step 4 ========================= ###
     # Call get_events to get the name change events for each ticker from Polygon
@@ -94,7 +92,7 @@ async def main():
     # print(type(reverse_mapping))
 
     # Save the reverse mapping with a pickle file
-    # reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
+    reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
 
     # Create the directory if it doesnt exist 
     # reverse_mapping_filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -109,21 +107,27 @@ async def main():
     # with open(reverse_mapping_filepath, 'rb') as of:
     #     reverse_mapping_reloaded = pickle.load(of)
 
+    with open(reverse_mapping_filepath, 'rb') as of:
+        reverse_mapping_reloaded = pickle.load(of)
 
-    # (need to reload the reversemapping from the pickle after fixing errors in map_symbols)
+    # for key, value in reverse_mapping_reloaded.items():
+    #     print(f"Mapping: {key, value}")
+    #     print(f"Mapping: {type(key), type(value)}")
 
+    START_DATE = '2016-01-01'
 
-    mapped_dataframe = map_symbols(reverse_mapping, OHLCV_data)
+    # Convert the reverse_mapping_reloaded dictionary into a pandas data frame
+    mapped_df = map_symbols(reverse_mapping_reloaded, OHLCV_data, START_DATE)
 
     # Save mapped dataframe 
-    mapped_dataframe_path = Path(r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\OHLCV_Historical_2016-01-01_to_2025-10-26_MAPPED.parquet')
+    mapped_df_path = Path(r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\OHLCV_Historical_2016-01-01_to_2025-10-26_MAPPED.parquet')
     
     # Create the directory if it doesnt exist and save the mapped historical data frame
-    mapped_dataframe_path.parent.mkdir(parents=True, exist_ok=True)
-    mapped_dataframe.to_parquet(mapped_dataframe_path)
+    mapped_df_path.parent.mkdir(parents=True, exist_ok=True)
+    mapped_df.to_parquet(mapped_df_path)
 
-    # # Print head to verify 
-    print(mapped_dataframe.head())
+    # Print head to verify 
+    print(mapped_df.head())
 
 if __name__ == "__main__":
     asyncio.run(main())

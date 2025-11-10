@@ -93,6 +93,7 @@ def build_ticker_mapping(events_list: []):
     """
     Build a mapping of all historical tickers to their current ticker.
     Returns a dictionary where key=historical_ticker, value=current_ticker
+
     """
     reverse_mapping = {}
     
@@ -120,31 +121,6 @@ def build_ticker_mapping(events_list: []):
         reverse_mapping[current_ticker] = historical_tickers
 
     return reverse_mapping
-
-# async def atomic_checkpoint(
-#     path, 
-#     events, 
-#     failed, 
-#     processed_set):
-#     """
-#     """
-#     temp_files = []
-#     try:
-#         # Write all three to temp files
-#         await write_temp_file(f"{path} + events.jsonl.tmp", events)
-#         await write_temp_file("failed_tickers.jsonl.tmp", failed)
-#         await write_temp_file("processed_tickers.json.tmp", processed_set)
-        
-#         # If all succeed, rename (atomic on most OS)
-#         rename("events.jsonl.tmp", "events.jsonl")
-#         rename("failed_tickers.jsonl.tmp", "failed_tickers.jsonl")
-#         rename("processed_tickers.json.tmp", "processed_tickers.json")
-    
-#     except Exception:
-#             # Clean up temp files on failure
-#             delete_all_temp_files()
-#             raise
-
 
 async def main():
 
@@ -174,26 +150,53 @@ async def main():
     # Build a ticker mapping
     reverse_mapping = build_ticker_mapping(list_of_events)
 
-    # Save the reverse mapping with a pickle file
-    reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
+    # # Save the reverse mapping with a pickle file
+    # reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
 
-    # Create the directory if it doesnt exist 
-    reverse_mapping_filepath.parent.mkdir(parents=True, exist_ok=True)
+    # # Create the directory if it doesnt exist 
+    # reverse_mapping_filepath.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(reverse_mapping_filepath, 'wb') as f:
-        pickle.dump(reverse_mapping, f)
+    # with open(reverse_mapping_filepath, 'wb') as f:
+    #     pickle.dump(reverse_mapping, f)
 
     # @TODO We might want to add specific testing on map_symbols
+    # @TODO If we run this again on a large list we should also change the dates to pandas datetimes to work with map_symbols
 
     # Load the reverse mapping and print it out to confirm strtucure (for my testing and understanding of how pickle works)
     # with open(reverse_mapping_filepath, 'rb') as of:
     #     reverse_mapping_reloaded = pickle.load(of)
 
-    # for key, value in reverse_mapping_reloaded.items():
-    #     print(f"Mapping: {key, value}")
+    for key, value in reverse_mapping.items():
+        print(f"Mapping: {key, value}")
+        print(f"Mapping: {type(key), type(value)}")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+
+
+        
+    # # Pre-process reverse_mapping: convert all date strings to datetime once
+    # # This avoids repeated conversions in the loop
+    # processed_mapping = {}
+    # for current_ticker, historical_list in reverse_mapping.items():
+    #     processed_list = []
+    #     for historical_ticker, change_date_str in historical_list:
+    #         change_date = pd.to_datetime(change_date_str).normalize()
+    #         processed_list.append((historical_ticker, change_date))
+    #     processed_mapping[current_ticker] = processed_list
+    
+    # # Use apply() instead of iterrows() - much faster!
+    # # Apply the mapping function to each row
+    # mapped_data['adjusted_ticker'] = mapped_data.apply(
+    #     lambda row: get_current_ticker_for_historical_date(
+    #         row['ticker'], 
+    #         row['date'], 
+    #         processed_mapping
+    #     ),
+    #     axis=1
+    # )
 
 
 
