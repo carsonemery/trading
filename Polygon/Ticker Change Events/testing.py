@@ -16,7 +16,7 @@ from utils import add_datetime
 from polygon_name_change_events import process_tickers, build_ticker_mapping, get_ticker_event, process_tickers
 
 # Import functions from polygon_symbol_mapping.py
-from polygon_symbol_mapping import map_symbols
+from polygon_symbol_mapping import map_symbols, diagnose_data
 
 # Load environment variables and setup client (same as polygon_name_change_events.py)
 load_dotenv()
@@ -61,6 +61,11 @@ async def main():
     # # Print to verify structure
     # print(OHLCV_data.head())
 
+    # test = OHLCV_data.sort_values(['ticker', 'date'], kind='stable')
+    # print(test)
+    # diagnose_data(test)
+
+
     # # Count rows per year 
     # rows_per_year = test_df.groupby(test_df['date'].dt.year).size()
     # print("\nRows per year:")
@@ -91,9 +96,6 @@ async def main():
     # print(reverse_mapping)
     # print(type(reverse_mapping))
 
-    # Save the reverse mapping with a pickle file
-    reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
-
     # Create the directory if it doesnt exist 
     # reverse_mapping_filepath.parent.mkdir(parents=True, exist_ok=True)
 
@@ -107,8 +109,14 @@ async def main():
     # with open(reverse_mapping_filepath, 'rb') as of:
     #     reverse_mapping_reloaded = pickle.load(of)
 
+
+
+    reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
+
+
     with open(reverse_mapping_filepath, 'rb') as of:
         reverse_mapping_reloaded = pickle.load(of)
+
 
     # for key, value in reverse_mapping_reloaded.items():
     #     print(f"Mapping: {key, value}")

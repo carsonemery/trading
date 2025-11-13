@@ -176,28 +176,4 @@ if __name__ == "__main__":
 
 
 
-        
-    # # Pre-process reverse_mapping: convert all date strings to datetime once
-    # # This avoids repeated conversions in the loop
-    # processed_mapping = {}
-    # for current_ticker, historical_list in reverse_mapping.items():
-    #     processed_list = []
-    #     for historical_ticker, change_date_str in historical_list:
-    #         change_date = pd.to_datetime(change_date_str).normalize()
-    #         processed_list.append((historical_ticker, change_date))
-    #     processed_mapping[current_ticker] = processed_list
-    
-    # # Use apply() instead of iterrows() - much faster!
-    # # Apply the mapping function to each row
-    # mapped_data['adjusted_ticker'] = mapped_data.apply(
-    #     lambda row: get_current_ticker_for_historical_date(
-    #         row['ticker'], 
-    #         row['date'], 
-    #         processed_mapping
-    #     ),
-    #     axis=1
-    # )
-
-
-
 
