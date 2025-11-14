@@ -1,5 +1,17 @@
 import pandas as pd
 import re
+from typing import Optional
+
+def sanitize_non_string_tickers(
+    df: pd.DataFrame
+    ) -> pd.DataFrame:
+    """
+    Filters out rows with NaN ticker values (824 rows in current dataset).
+    Most efficient: dropna on subset.
+    """
+    OHLCV_filtered = df.dropna(subset=['ticker'])
+
+    return OHLCV_filtered
 
 def sanitize_non_equities(
     df: pd.DataFrame
@@ -15,7 +27,8 @@ def sanitize_non_equities(
     tickers_to_remove = []
 
     for ticker in unique_tickers:
-        tickers_to_remove.append(extract_tickers(ticker))
+        if remove_ticker := extract_tickers(ticker):
+            tickers_to_remove.append(remove_ticker)
 
     # Create a single boolean mask of all tickers we want to remove 
     mask_to_remove = df['ticker'].isin(tickers_to_remove)
@@ -29,7 +42,7 @@ def sanitize_non_equities(
     return OHLCV_filtered
 
 def extract_tickers(
-    ticker: str) -> str:
+    ticker: str) -> Optional[str]:
     """
         Helper function used to find tickers that match our filtering criteria.
 
@@ -58,11 +71,11 @@ def extract_tickers(
         return ticker
 
     # Match ZVZZT/ZWZZT test tickers
-    if re.match(r'^(ZVZZT|ZWZZT)$', ticker):
+    elif re.match(r'^(ZVZZT|ZWZZT)$', ticker):
         return ticker
 
     # Match non-equities (lowercase/period suffixes)
-    if re.match(r'^([^a-z.]*)([a-z.].*)$', ticker):
+    elif re.match(r'^([^a-z.]*)([a-z.].*)$', ticker):
         return ticker
 
     # If no pattern matches None is passed to the calling source by default which is an instance of class 'NoneType'
@@ -83,11 +96,12 @@ def sanitize_duplicates(
     # Find the duplcate rows
     duplicate_rows = df[df.duplicated(subset=['ticker', 'date'], keep=False)]
 
-    # Remove the duplicate rows and return the cleaned dataframe
+    # Create a boolean mask using the duplicate rows
+    mask = ~df.set_index(['ticker', 'date']).index.isin(duplicate_rows.set_index(['ticker', 'date']).index)
 
+    OHLCV_filtered = df[mask].reset_index(drop=True)    
 
-
-    return OHLCV_data
+    return OHLCV_filtered
 
 def sanitize_low_volume(
     df: pd.DataFrame
@@ -123,16 +137,147 @@ def sanitize_low_volume(
 
     return OHLCV_filtered
 
-def normalize_datatypes():
+def normalize_datatypes(
+    df: pd.DataFrame
+    ) -> pd.DataFrame:
     """
+    This function performs a couple basic processes to convert data types and reorder the columns or the dataframe
+
         Normalize the data types in each of the columns of our data, 
         preparing it for further processing and feature engineering.
-    """
+        
+        Converts ticker to category dtype for memory efficiency and performance
+        in groupby, filtering, and sorting operations down the line. 
 
-def run_cleaning():
+        Explicitly sets the types of all columns of the dataframe
+
+        Order and type of columns will be as follows:
+        ============================================
+        date                   datetime64[ns]
+        unix_nsec_timestamp             int64
+        ticker                       category
+        open                          float64
+        close                         float64
+        high                          float64
+        low                           float64
+        volume                          int64
+        transactions                    int64
+
+    """
+    # Explicitly set the datatypes for each column
+    df.loc[:, 'date'] = pd.to_datetime(df.loc[:, 'window_start'], unit='ns').dt.normalize()
+    df.loc[:, 'window_start'] = df.loc[:, 'window_start'].astype('int64')
+    df.loc[:, 'ticker'] = df.loc[:, 'ticker'].astype('category')
+    df.loc[:, 'open'] = df.loc[:, 'open'].astype('float64')
+    df.loc[:, 'close'] = df.loc[:, 'close'].astype('float64')
+    df.loc[:, 'high'] = df.loc[:, 'high'].astype('float64')
+    df.loc[:, 'low'] = df.loc[:, 'low'].astype('float64')
+    df.loc[:, 'volume'] = df.loc[:, 'volume'].astype('int64')
+    df.loc[:, 'transactions'] = df.loc[:, 'transactions'].astype('int64')
+
+    # Rename window_start to unix_nsec_timestamp
+    df = df.rename(columns={'window_start': 'unix_nsec_timestamp'})
+
+    # Reorder columns to match desired order: date, unix_nsec_timestamp, ticker, open, close, high, low, volume, transactions
+    desired_order = ['date', 'unix_nsec_timestamp', 'ticker', 'open', 'close', 'high', 'low', 'volume', 'transactions']
+    OHLCV_filtered = df[desired_order]
+
+    return OHLCV_filtered
+  
+def sanitize_short_series(
+    df: pd.DataFrame,
+    removal_threshold: int
+    ) -> pd.DataFrame:
+    """
+    Removes tickers that have fewer than the specified number of unique trading days.
+    
+    This filters out tickers with insufficient data for meaningful analysis.
+    Common examples include test tickers, very short-lived IPOs, or data errors.
+
+    Some distributions on small values BEFORE any filtering from the ipynb
+
+    Threshold | Tickers Removed | % of Total | Rows Removed | % of Rows
+    ----------------------------------------------------------------------
+        10   |       544      |   2.30%  |      2,463   |   0.01%
+        20   |       943      |   3.99%  |      8,355   |   0.04%
+        30   |     1,292      |   5.47%  |     16,518   |   0.07%
+        50   |     1,690      |   7.15%  |     31,991   |   0.14%
+        60   |     1,845      |   7.81%  |     40,390   |   0.17%
+        90   |     2,383      |  10.09%  |     80,426   |   0.34%
+        120  |     2,926      |  12.39%  |    137,460   |   0.59%
+
+    
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        DataFrame with ticker and date columns
+    removal_threshold : int, 
+        Minimum number of unique trading days required to keep a ticker.
+
+    Returns:
+    --------
+    pd.DataFrame with short-series tickers removed
+    """
+    
+    tickers_too_little_data = []
+
+    for ticker, group in df.groupby('ticker', observed=True):
+        dates = group['date'].unique()
+
+        if len(dates) < removal_threshold:
+            tickers_too_little_data.append(ticker)
+    
+    # Create a boolean mask of all tickers we want to remove
+    mask_to_remove = df['ticker'].isin(tickers_too_little_data)
+    
+    # Negate the mask using the tilde operator, this selects all rows where the ticker is NOT in the list to remove
+    mask_to_keep = ~mask_to_remove
+    
+    # Apply the mask
+    OHLCV_filtered = df[mask_to_keep].reset_index(drop=True)
+    
+    return OHLCV_filtered
+
+def run_cleaning(
+    df: pd.DataFrame
+    ) -> pd.DataFrame:
     """
         Run all cleaning functions to return a sanitized dataframe
         Meant to be the public API by chaining together the various functions in this file
     """
+    print("Dataframe before cleaning:")
+    print("================================")
+    print(f"Count of Unique Tickers: {len(df['ticker'].unique())}")
+    print(f"Number of Rows: {len(df)}")
+    print("================================")
 
-    pass
+    # 0. Drop rows with NaN ticker values
+    sanitized_nan = sanitize_non_string_tickers(df)
+
+    # 2. Update types, rename and reorder columns 
+    normalized = normalize_datatypes(sanitized_nan) 
+
+    # 1. Clean for non equities as much as we can
+    sanitized_non_equities = sanitize_non_equities(normalized)
+
+    # 2. Remove duplicates
+    sanitized_duplicates = sanitize_duplicates(sanitized_non_equities)
+
+    # 3. Remove low vol 
+    sanitized_low_vol = sanitize_low_volume(sanitized_duplicates)
+
+    # 4. Remove tickers with very low total trading days, currently selecting 60 and doing
+    # this at the end of all the other sanitization (final step)
+    OHLCV_processed = sanitize_short_series(sanitized_low_vol, 60)
+
+    # Sort the dataframe by ticker and date in ascending order
+    # This is required for merge_asof operations and ensures consistent ordering for downstream processing
+    OHLCV_processed = OHLCV_processed.sort_values(['ticker', 'date'], kind='stable').reset_index(drop=True)
+
+    print("Dataframe after cleaning:")
+    print("================================")
+    print(f"Count of Unique Tickers: {len(OHLCV_processed['ticker'].unique())}")
+    print(f"Number of Rows: {len(OHLCV_processed)}")
+    print("================================")
+
+    return OHLCV_processed

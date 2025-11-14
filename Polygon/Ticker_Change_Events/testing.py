@@ -18,6 +18,8 @@ from polygon_name_change_events import process_tickers, build_ticker_mapping, ge
 # Import functions from polygon_symbol_mapping.py
 from polygon_symbol_mapping import map_symbols, diagnose_data
 
+from cleaning import run_cleaning
+
 # Load environment variables and setup client (same as polygon_name_change_events.py)
 load_dotenv()
 client = RESTClient(os.getenv("POLYGON_API_KEY"))
@@ -56,7 +58,14 @@ async def main():
 
     ### =============== Step 2 ========================= ###
     # Create a datetime column in the first position
-    OHLCV_data = add_datetime(OHLCV_data)
+    # OHLCV_data = add_datetime(OHLCV_data)
+
+    # diagnose_data(OHLCV_data)
+
+    OHLCV_cleaned = run_cleaning(OHLCV_data)
+
+    # diagnose_data(OHLCV_cleaned)
+    
 
     # # Print to verify structure
     # print(OHLCV_data.head())
@@ -109,33 +118,32 @@ async def main():
     # with open(reverse_mapping_filepath, 'rb') as of:
     #     reverse_mapping_reloaded = pickle.load(of)
 
+    # reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
+
+    # with open(reverse_mapping_filepath, 'rb') as of:
+    #     reverse_mapping_reloaded = pickle.load(of)
 
 
-    reverse_mapping_filepath = Path(r"C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\test_data_REVERSEMAPPING.pkl")
+    # # for key, value in reverse_mapping_reloaded.items():
+    # #     print(f"Mapping: {key, value}")
+    # #     print(f"Mapping: {type(key), type(value)}")
+
+    # START_DATE = '2016-01-01'
 
 
-    with open(reverse_mapping_filepath, 'rb') as of:
-        reverse_mapping_reloaded = pickle.load(of)
-
-
-    # for key, value in reverse_mapping_reloaded.items():
-    #     print(f"Mapping: {key, value}")
-    #     print(f"Mapping: {type(key), type(value)}")
-
-    START_DATE = '2016-01-01'
 
     # Convert the reverse_mapping_reloaded dictionary into a pandas data frame
-    mapped_df = map_symbols(reverse_mapping_reloaded, OHLCV_data, START_DATE)
+    # mapped_df = map_symbols(reverse_mapping_reloaded, OHLCV_cleaned, START_DATE)
 
-    # Save mapped dataframe 
-    mapped_df_path = Path(r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\OHLCV_Historical_2016-01-01_to_2025-10-26_MAPPED.parquet')
+    # # Save mapped dataframe 
+    # mapped_df_path = Path(r'C:\Users\carso\Development\emerytrading\Data\Stocks\Polygon\OHLCV_Historical_2016-01-01_to_2025-10-26_MAPPED.parquet')
     
-    # Create the directory if it doesnt exist and save the mapped historical data frame
-    mapped_df_path.parent.mkdir(parents=True, exist_ok=True)
-    mapped_df.to_parquet(mapped_df_path)
+    # # Create the directory if it doesnt exist and save the mapped historical data frame
+    # mapped_df_path.parent.mkdir(parents=True, exist_ok=True)
+    # mapped_df.to_parquet(mapped_df_path)
 
-    # Print head to verify 
-    print(mapped_df.head())
+    # # Print head to verify 
+    # print(mapped_df.head())
 
 if __name__ == "__main__":
     asyncio.run(main())
