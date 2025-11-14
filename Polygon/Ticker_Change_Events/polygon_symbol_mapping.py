@@ -476,10 +476,3 @@ def diagnose_data(
         print(f"    ⚠️  Large gaps found. Ticker reuse may cause mapping issues - verify logic.")
     
     print("="*80 + "\n")
-
-
-Results
-
-
-
-

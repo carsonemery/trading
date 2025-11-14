@@ -25,7 +25,7 @@ async def process_tickers(
     list_of_events = []
     list_failed_tickers = []
     # We also want to track and return a set of each ticker we have successfully processed through the API, using this to track what tickers we 
-    # need to send in the future to complete our data set or resume a cancelled or failed request
+    # need to send in the future to complete our data set or resume a cancelled or failed request (not currently implemented)
     set_of_processed_tickers = {}
 
     # Limit concurrency with a semaphore and use a 0.01 second or 10ms space 
@@ -68,7 +68,7 @@ async def get_ticker_event(
     """
     async with semaphore:
         try:
-            # Runt the synchronous RESTClient call in a thread
+            # Run the synchronous RESTClient call in a thread
             events = await asyncio.to_thread(client.get_ticker_events, ticker)
             # Construct and event dictionary which holds:
                 # 1) the ticker we passed in 
