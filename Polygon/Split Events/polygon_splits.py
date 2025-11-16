@@ -59,16 +59,9 @@ async def process_tickers(
         result_type, split_event = await task
 
         if result_type == "success":
-            for split in split_event:
-                # Create a Splits dataclass object with all values upon construction
-                split_data = Splits(
-                    ticker=split.ticker,
-                    date=split.execution_date,
-                    split_from=split.split_from,
-                    split_to=split.split_to
-                )
-                # Append each split inside the loop
-                list_of_splits.append(split_data)
+            # split_event is already a list of Splits dataclass objects
+            # (transformation happens in get_split_events())
+            list_of_splits.extend(split_event)
         else:
             list_of_failed.append(split_event)
 
@@ -102,11 +95,29 @@ async def get_split_events(
                     sort="execution_date"
                 )
                 # Convert generator to list
+                # This return only exits fetch_splits(), NOT get_split_events()
                 return list[bytes | Split](splits_generator)
             
             # Run the synchronous call in a thread pool
+            # fetch_splits() executes here and returns a list of Split objects
+            # The return inside fetch_splits() only exits that nested function,
+            # execution continues here in get_split_events()
             splits = await asyncio.to_thread(fetch_splits)
-            return ("success", splits)
+            
+            # Transform the raw Split objects into Splits dataclass objects
+            # This happens AFTER fetch_splits() has returned
+            split_objects = [
+                Splits(
+                    ticker=split.ticker,
+                    date=split.execution_date,
+                    split_from=split.split_from,
+                    split_to=split.split_to
+                )
+                for split in splits
+            ]
+            
+            # Now return from get_split_events() with the transformed data
+            return ("success", split_objects)
         # Catch the failed requests to track which tickers we did not get any name change info from    
         except BadResponse as e:
             print(f"BadResponse for {ticker}: {e}")
