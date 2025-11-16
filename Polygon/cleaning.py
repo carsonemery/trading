@@ -1,6 +1,6 @@
 import pandas as pd
 import re
-from typing import Optional
+from typing import Any, Optional
 
 def sanitize_non_string_tickers(
     df: pd.DataFrame
@@ -64,7 +64,6 @@ def extract_tickers(
 
         If the ticker passed in does not match any of the cases below, we return None, keeping that ticker and its series in the data.
     """
-
     # Match test tickers (case-insensitive)
     if re.search(r'(?i)test', ticker):
         # Handle test tickers
@@ -164,6 +163,9 @@ def normalize_datatypes(
         transactions                    int64
 
     """
+    # Create a copy to avoid SettingWithCopyWarning
+    df = df.copy()
+    
     # Explicitly set the datatypes for each column
     df.loc[:, 'date'] = pd.to_datetime(df.loc[:, 'window_start'], unit='ns').dt.normalize()
     df.loc[:, 'window_start'] = df.loc[:, 'window_start'].astype('int64')
@@ -183,7 +185,7 @@ def normalize_datatypes(
     OHLCV_filtered = df[desired_order]
 
     return OHLCV_filtered
-  
+
 def sanitize_short_series(
     df: pd.DataFrame,
     removal_threshold: int
@@ -238,6 +240,26 @@ def sanitize_short_series(
     
     return OHLCV_filtered
 
+def sanitize_warrants_rights_units_non_obvious(
+    df: pd.DataFrame
+    ) -> pd.DataFrame:
+    """
+    Removes warrants, rights, and units by checking for 5-character tickers ending in U, W, or R
+    that have a matching 4-character base ticker.
+    """
+    unique_tickers = df['ticker'].unique()
+    tickers_to_remove = []
+
+    for ticker in unique_tickers:
+        if isinstance(ticker, str) and len(ticker) == 5 and ticker[4] in ['U', 'W', 'R']:
+            base_ticker = ticker[:4]
+            if base_ticker in unique_tickers:
+                tickers_to_remove.append(ticker)
+
+    mask_to_keep = ~df['ticker'].isin(tickers_to_remove)
+
+    return df[mask_to_keep]
+
 def run_cleaning(
     df: pd.DataFrame
     ) -> pd.DataFrame:
@@ -251,28 +273,31 @@ def run_cleaning(
     print(f"Number of Rows: {len(df)}")
     print("================================")
 
-    # 0. Drop rows with NaN ticker values
+    # 1. Drop rows with NaN ticker values
     sanitized_nan = sanitize_non_string_tickers(df)
 
     # 2. Update types, rename and reorder columns 
-    normalized = normalize_datatypes(sanitized_nan) 
+    normalized_dtypes = normalize_datatypes(sanitized_nan) 
 
-    # 1. Clean for non equities as much as we can
-    sanitized_non_equities = sanitize_non_equities(normalized)
+    # 3. Remove duplicates
+    sanitized_duplicates = sanitize_duplicates(normalized_dtypes)
 
-    # 2. Remove duplicates
-    sanitized_duplicates = sanitize_duplicates(sanitized_non_equities)
-
-    # 3. Remove low vol 
+    # 4. Remove low vol 
     sanitized_low_vol = sanitize_low_volume(sanitized_duplicates)
 
-    # 4. Remove tickers with very low total trading days, currently selecting 60 and doing
-    # this at the end of all the other sanitization (final step)
-    OHLCV_processed = sanitize_short_series(sanitized_low_vol, 60)
+    # 5. Remove tickers with very low total trading days, currently selecting 30 
+    # (for context this is also doing very little to the shape of the data)
+    sanitized_short_hist = sanitize_short_series(sanitized_low_vol, 30)
+
+    # 6. Clean for non equities as much as we can using obvious suffixes
+    sanitized_non_equities = sanitize_non_equities(sanitized_short_hist)
+
+    # 7. Finally clean for non equities with U, R, and W suffixes based on a base ticker match
+    sanitizedd_non_equities_non_obvious = sanitize_warrants_rights_units_non_obvious(sanitized_non_equities)
 
     # Sort the dataframe by ticker and date in ascending order
     # This is required for merge_asof operations and ensures consistent ordering for downstream processing
-    OHLCV_processed = OHLCV_processed.sort_values(['ticker', 'date'], kind='stable').reset_index(drop=True)
+    OHLCV_processed = sanitizedd_non_equities_non_obvious.sort_values(['ticker', 'date'], kind='stable').reset_index(drop=True)
 
     print("Dataframe after cleaning:")
     print("================================")

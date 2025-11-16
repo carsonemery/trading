@@ -6,15 +6,24 @@ from dotenv import load_dotenv
 from polygon.exceptions import BadResponse
 import pandas as pd
 import asyncio 
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 from rich import print
 from tqdm import tqdm
 from tqdm.asyncio import tqdm
 import pickle
 from pathlib import Path
+from dataclasses import dataclass, field
 
 load_dotenv()
 client = RESTClient(os.getenv("POLYGON_API_KEY"))
+
+@dataclass(frozen=True, slots=True)
+class TickerEvent:
+    ticker: str
+    name: Optional[str] = None
+    composite_figi: Optional[str] = None
+    cik: Optional[str] = None
+    events: List[Dict[str, Any]] = field(default_factory=list)
 
 async def process_tickers(
     tickers_list: List[str]):
