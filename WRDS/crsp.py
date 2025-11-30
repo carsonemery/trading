@@ -4,60 +4,36 @@ from dotenv import load_dotenv
 import pandas as pd
 
 load_dotenv()
-
 os.environ['PGPASSFILE'] = os.getenv("PGPASS_PATH")
 wrds_username = os.getenv("WRDS_username")
 
-# Connect to the Database
-connection = wrds.Connection(wrds_username=wrds_username)
+# Initialize a connection object using with context manager
+with wrds.Connection(wrds_username=wrds_username) as db:
 
-# Get the libraries we have available
-libraries = connection.list_libraries()
-
-# Get the list of crsp tables we have avaiable
-crsps_tables = connection.list_tables(library='crsp')
-
-# Get the tables with dfs in their names
-daily_stock_tables = [table for table in crsps_tables if 'dsf' in table ]
-
-print(daily_stock_tables)
-
-
-# # stock_data = connection.describe_table('crsp', 'wrds_dsf62v2_query')
-whats_working = []
-
-
-for table in daily_stock_tables:
-    print(f"Testing table: {table}...")
+    # Primary CRSP libraries we have access to:
+    # crsp   -----> Annual updates
+    # crspq  -----> Quarterly updates
+    
+    # Key CRSP tables in crspq:
+    # crspq.dsf              -----> Daily Stock File (returns, prices, volume)
+    # crspq.msf              -----> Monthly Stock File
+    # crspq.stocknames       -----> Stock names and info
+    # crspq.wrds_dsfv2_query -----> Enhanced daily stock file
+    
+    # Example 1: Get daily stock data for AAPL
+    sample_query = """
+    SELECT date, permno, permco, ticker, cusip, prc, vol, ret, shrout
+    FROM crspq.dsf
+    WHERE ticker = 'AAPL'
+      AND date >= '2024-01-01'
+      AND date <= '2024-01-31'
+    ORDER BY date
+    LIMIT 50
+    """
+    
     try:
-        # Try to fetch just 1 row to test permissions
-        stock_data = connection.get_table('crsp', table, obs=1)
-        
-        # If we get here, it worked
-        print(f"  SUCCESS: {table}")
-        whats_working.append(table)
-        
+        df = db.raw_sql(sample_query)
+        print("\nCRSP Daily Stock File (dsf) - AAPL Jan 2024:")
+        print(df.head(10))
     except Exception as e:
-        # Catch specific error and print it
-        print(f"  FAILED: {table}")
-        # print(f"    Reason: {e}") # Uncomment to see full error details
-
-print("\nSummary of working tables:")
-print(whats_working)
-
-
-
-
-print(stock_data)
-
-# # results = connection.get_table('crsp', 'wrds_dsf62v2_query', obs=100)
-# results = connection.get_table('crsp', 'dfs', obs=100)
-
-# print(results.head())
-
-
-connection.close()
-
-
-
-
+        print(f"\nFailed: {e}")
