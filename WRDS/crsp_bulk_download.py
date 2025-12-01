@@ -12,8 +12,8 @@ wrds_username = os.getenv("WRDS_username")
 OUTPUT_DIR = Path("data/crsp")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-START_YEAR = 2023
-END_YEAR = 2024
+START_YEAR = 2010
+END_YEAR = 2022
 
 with wrds.Connection(wrds_username=wrds_username) as db:
     print("Connected to WRDS\n")
