@@ -24,6 +24,8 @@ Data/
 *.feather
 *.hdf5
 *.h5
+*.txt
+*.pdf
 
 # Model engine - proprietary
 Features/Individual Features/
