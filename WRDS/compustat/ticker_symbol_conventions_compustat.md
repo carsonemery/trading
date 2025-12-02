@@ -335,3 +335,152 @@ Numeric Component
 For U.S. and Canadian indexes, this is a 4-digit number. For indexes from outside the U.S. and Canada, this is a 3-digit number.
 
 Note: For tickers representing Islamic indexes that focus on the United States and Canada, this element may be 3-digit number.
+
+Comparability Status Codes:
+Comparability Status
+Mnemonic
+
+Periodicity
+
+Format
+
+Units
+
+COMPST
+
+Scalar
+
+Code
+
+---
+
+COMPSTQ
+
+Scalar
+
+Code
+
+---
+
+Industrial Definition
+This item contains the two-character code that describes conditions under which data in one period may not be comparable to data in another period. Following is a list of the codes and descriptions.
+
+Reference Data
+
+Description
+
+Mnemonic
+
+Comparability Status Code
+
+COMPSTCD
+
+Comparability Status Description
+
+COMPSTDESC
+
+Reference items consist of lists of codes and descriptions that are not tied to a specific company record. The reference items COMPSTCD and COMPSTDESC contain a list of codes and descriptions for all possible comparability status codes available. If you want to find the comparability status code used by a particular company, choose the company-level item COMPST.
+
+Reference items may apply to one or more company-level items.
+
+The following table lists the comparability status codes and the associated descriptions at both the company-level and reference-level:
+
+Code
+
+Description
+
+AA
+
+Data reflects a merger or acquisition
+
+AB
+
+Data reflects a major merger resulting in the formation of a new company.
+
+AC
+
+Data reflects an accounting change
+
+AD
+
+Missing quarter (period) has not been derived due to discontinued operations
+
+AF
+
+Combination AA and AN
+
+AG
+
+Reflects adoption of Fresh Start Accounting
+
+AH
+
+Combination AN and AZ
+
+AN
+
+Data reflects the adoption of new accounting principles and presentation methods pursuant to revised national regulations and guidelines
+
+AQ
+
+Combination AC & SQ - Reflects an accounting change and reflects that Semi-annual I/S and C/F data is allocated over missing quarters and B/S data is carried over to missing quarter
+
+AR
+
+Combination AA and AZ
+
+AS
+
+Combination AA and AC
+
+AT
+
+Combination AC and AZ
+
+AU
+
+Combination AD and DB
+
+AZ
+
+Data excludes discontinued operations (North America); data reflects disposals (outside North America)
+
+CA
+
+Includes six months of a merger or acquisition
+
+CB
+
+Includes nine months of a merger or acquisition
+
+CC
+
+Includes 12 months of a merger or acquisition
+
+CE
+
+Excludes six months of discontinued operations
+
+CF
+
+Excludes nine months of discontinued operations
+
+CG
+
+Excludes 12 months of discontinued operations
+
+DB
+
+Company has undergone a fiscal year change. Some or all data may not be available
+
+DZ
+
+Company has been in operation for less than one year. Some or all data may not be available
+
+IP
+
+Company has undergone an initial public offering
+
+SQ
+
+Semi-annual I/S and C/F data is allocated over missing quarters and B/S data is carried over to missing quarter

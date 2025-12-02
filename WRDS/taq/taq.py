@@ -23,6 +23,9 @@ with wrds.Connection(wrds_username=wrds_username) as db:
     WHERE sym_root = 'AAPL'
     LIMIT 10
     """
+    
+    
+    
     try:
         df = db.raw_sql(sample_query)
         print(df.head())
