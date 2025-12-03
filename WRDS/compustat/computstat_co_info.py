@@ -14,7 +14,7 @@ wrds_username = os.getenv("WRDS_username")
 from compustat_fields_utility import field_list
 
 # Save to Data/ folder at project root (not relative to cwd)
-OUTPUT_DIR = Path(__file__).parent.parent.parent / "Data" / "compustat_fundamentals_q"
+OUTPUT_DIR = Path(__file__).parent.parent.parent / "Data" / "compustat_fundamentals_"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 START_YEAR = 2010
@@ -32,7 +32,7 @@ with wrds.Connection(wrds_username=wrds_username) as db:
     # comp.company   -----> Company information
     # comp.names     -----> Company names and identifiers
 
-    table = 'fundq'
+    table = 'company'
     
     for year in range(START_YEAR, END_YEAR + 1):
         print(f"Downloading {year}...")
@@ -52,7 +52,7 @@ with wrds.Connection(wrds_username=wrds_username) as db:
             df = db.raw_sql(query_string)
 
             # save to parquet file
-            output_file = OUTPUT_DIR / f"{table}_{year}.parquet"
+            output_file = OUTPUT_DIR / f"{table}_info_{year}.parquet"
             df.to_parquet(output_file, compression='snappy', index=False)
 
             # print file size info
@@ -63,5 +63,3 @@ with wrds.Connection(wrds_username=wrds_username) as db:
             
         except Exception as e:
             print(f"\nFailed: {e}")
-
-

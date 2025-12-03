@@ -220,7 +220,7 @@ field_list = [
     'rcaq',     # Restructuring Cost After-tax
     'rcpq',     # Restructuring Cost Pretax
     'rdipaq',   # In Process R&D Expense After-tax
-    'rdipq',    # In Process R&D
+    'rdipq',    # In Process R& 
     'recdq',    # Receivables - Estimated Doubtful
     'rectaq',   # Accum Other Comp Inc - Cumulative Translation Adjustments
     'rectoq',   # Receivables - Current Other incl Tax Refunds
@@ -552,6 +552,12 @@ def analyze_field_differences():
     
     return list(missing_from_db), list(not_in_our_list)
 
+from pathlib import Path
+OUTPUT_DIR = Path("data/compustat_fundamentals_q")
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
+
 
 def test_null_fields_across_sectors():
     """Test which fields are completely NULL across multiple sectors"""
@@ -589,90 +595,30 @@ def test_null_fields_across_sectors():
         'OCGN', 'PHUN', 'MARK', 'GWH', 'XENE', 'RCAT', 'MRIN', 'HSGX'
     ]
     
-    # Remove duplicates while preserving order
-    edge_cases_list = list(dict.fromkeys(edge_cases_list))
-    
-    print("="*80)
-    print("TESTING FIELD AVAILABILITY ACROSS SECTORS & EDGE CASES")
-    print("="*80)
-    print(f"\nTest tickers: {', '.join(edge_cases_list)}")
-    print(f"Total tickers: {len(edge_cases_list)}")
-    print(f"Testing {len(field_list)} fields\n")
-    
     with wrds.Connection(wrds_username=wrds_username) as db:
-        all_null_fields = None
-        
-        for ticker in edge_cases_list:
-            print(f"Querying {ticker}...", end=" ")
-            
-            query = f"""
-            SELECT {','.join(field_list)}
-            FROM comp.fundq
-            WHERE tic = '{ticker}'
-              AND datafmt = 'STD'
-              AND consol = 'C'
-              AND indfmt IN ('INDL', 'FS')
-            ORDER BY datadate DESC
-            LIMIT 200
-            """
-            
-            try:
-                df = db.raw_sql(query)
-                
-                # Save to parquet here so we can examine a bit
+    
+        sample_query = f"""
+        SELECT 
+        {','.join(field_list)}
+        FROM comp.fundq
+        WHERE 
+            tic IN {tuple(edge_cases_list)}
+            AND datafmt = 'STD'
+            AND consol = 'C'
+            AND indfmt IN ('INDL', 'FS')
+        LIMIT 10000
+        """
 
+        try:
+            df = db.raw_sql(sample_query)
 
+            # save to parquet file
+            output_file = OUTPUT_DIR / f"edgecases_Jan2025.parquet"
+            df.to_parquet(output_file, compression='snappy', index=False)
 
+        except Exception as e:
+            print(f"\nFailed --> Message --> {e}")
 
-                null_counts = df.isnull().sum()
-                completely_null = set(null_counts[null_counts == len(df)].index.tolist())
-                
-                if all_null_fields is None:
-                    all_null_fields = completely_null
-                else:
-                    # Keep only fields that are NULL in ALL stocks
-                    all_null_fields = all_null_fields.intersection(completely_null)
-                
-                print(f"{len(df)} quarters, {len(completely_null)} null fields")
-                
-            except Exception as e:
-                print(f"Error: {e}")
     
-    if all_null_fields is None:
-        print("\n" + "="*80)
-        print("ERROR: No data returned from any tickers")
-        print("="*80)
-        return
-    
-    print("\n" + "="*80)
-    print("FIELDS THAT ARE 100% NULL ACROSS ALL TEST STOCKS")
-    print("="*80)
-    print(f"Total: {len(all_null_fields)} fields\n")
-    
-    # Categorize by suffix
-    y_fields = sorted([f for f in all_null_fields if f.endswith('y')])
-    q_fields = sorted([f for f in all_null_fields if f.endswith('q')])
-    other_fields = sorted([f for f in all_null_fields if not f.endswith('y') and not f.endswith('q')])
-    
-    if y_fields:
-        print(f"Annual fields (y-suffix): {len(y_fields)}")
-        for f in y_fields:
-            print(f"  - {f}")
-    
-    if q_fields:
-        print(f"\nQuarterly fields (q-suffix): {len(q_fields)}")
-        for f in q_fields:
-            print(f"  - {f}")
-    
-    if other_fields:
-        print(f"\nOther fields: {len(other_fields)}")
-        for f in other_fields:
-            print(f"  - {f}")
-    
-    print("\n" + "="*80)
-    print("Remove these fields from field_list")
-    print("="*80)
-
-
 if __name__ == "__main__":
     test_null_fields_across_sectors()
