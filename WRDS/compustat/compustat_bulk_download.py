@@ -14,7 +14,7 @@ wrds_username = os.getenv("WRDS_username")
 from compustat_fields_utility import field_list
 
 # Save to Data/ folder at project root (not relative to cwd)
-OUTPUT_DIR = Path(__file__).parent.parent.parent / "Data" / "compustat_fundamentals_q"
+OUTPUT_DIR: Path = Path(__file__).parent.parent.parent / "Data" / "compustat_fundamentals_q"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 START_YEAR = 2010
