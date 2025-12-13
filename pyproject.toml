@@ -21,4 +21,6 @@ dependencies = [
     "jupyter>=1.0.0",
     "tqdm>=4.66.0",
     "rich>=13.7.0",
+    "matplotlib>=3.9.0",
+    "scipy>=1.11.0",
 ]
