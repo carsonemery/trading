@@ -54,7 +54,6 @@ temp/
 tmp/
 
 # Jupyter Notebook checkpoints
-.ipynb_checkpoints/
 
 # Model files (if generated)
 *.pkl
@@ -63,6 +62,5 @@ tmp/
 *.h5
 *.pb
 *.onnx
-models/
-checkpoints/
+
 
