@@ -16,7 +16,7 @@ Requires `.env` file with:
 
 ## Data Sources
 
-Evaluating: Databento, Polygon, crsp, compustat
+Evaluating: Databento, Polygon, crsp, taq, compustat
 
 ## Status
 
