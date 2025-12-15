@@ -3,8 +3,8 @@
 This module provides functions to get standard paths throughout the project,
 eliminating hardcoded paths and making the code portable.
 """
-from pathlib import Path
 import os
+from pathlib import Path
 from typing import Optional
 
 

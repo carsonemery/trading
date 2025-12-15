@@ -1,9 +1,9 @@
 import os
-import pandas as pd
-import numpy as np
 from pathlib import Path
-from dotenv import load_dotenv
 
+import numpy as np
+import pandas as pd
+from dotenv import load_dotenv
 
 ## Creates dividend cut flags ##
 ## Also various diagnostic / analysis functions ##
