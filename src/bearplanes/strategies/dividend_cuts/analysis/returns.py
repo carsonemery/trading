@@ -1,11 +1,11 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-from pathlib import Path
-from dotenv import load_dotenv
 import os
-import numpy as np
-from scipy.stats import pearsonr
+from pathlib import Path
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from dotenv import load_dotenv
+from scipy.stats import pearsonr
 
 
 def plot_monte_carlo_paths(df_merged: pd.DataFrame, window_days: int, 
