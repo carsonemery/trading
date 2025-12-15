@@ -24,7 +24,7 @@ class DescribeDataframes:
             self.exact_duplicates()
             self.analyze_columns()
         else:
-            pass
+            self.check_monotonic() # want to put more stuff related to the validity of a time series here
 
     def basic_info(self):
         """
@@ -32,21 +32,26 @@ class DescribeDataframes:
         Prints all of the columns and their data types
         """
         # # Number of columns, rows, and column names and datatypes
-        print("-" * 20)
-        print(f"Dataframe has {len(self._obj)} rows and {self._obj.columns} columns ")
-        print("-" * 20)
-        print("Columns and Types:")
+        print("\n" + "=" * 60)
+        print("BASIC INFORMATION")
+        print("=" * 60)
+        print(f"Dimensions: {len(self._obj):,} rows × {self._obj.shape[1]} columns")
+        print("-" * 60)
+        print("Column Data Types:")
         print(self._obj.dtypes)
-        print("-" * 20)
+        print("=" * 60)
 
     def memory_usage(self):
         """
         Describes the memory usage of the dataframe
         """
         # Dataframe memory usage
-        print("-" * 20)
-        print(f"Dataframe size in memory: {self._obj.memory_usage(deep=True).sum() / (1024 * 1024)} Megabytes")
-        print("-" * 20)
+        print("\n" + "=" * 60)
+        print("MEMORY USAGE")
+        print("=" * 60)
+        mb = self._obj.memory_usage(deep=True).sum() / (1024 * 1024)
+        print(f"Total memory: {mb:.2f} MB")
+        print("=" * 60)
 
     def missing_analysis(self):
         """
@@ -61,14 +66,15 @@ class DescribeDataframes:
             'missing_count': missing_count.values,
             'percent_missing': (missing_count.values / len(self._obj)) * 100
         })
-        print("-" * 20)
-        print(f"Information of Missing Values")
+        print("\n" + "=" * 60)
+        print("MISSING VALUES ANALYSIS")
+        print("=" * 60)
         with pd.option_context(
                 'display.max_rows', None, 
                 'display.max_columns', None, 
                 'display.max_colwidth', None):
-            print(missing_df)
-        print("-" * 20)
+            print(missing_df.to_string(index=False))
+        print("=" * 60)
 
     def exact_duplicates(self):
         """
@@ -80,17 +86,23 @@ class DescribeDataframes:
         """
         # Create a dataframe of exact duplicates
         duplicate_df = self._obj[self._obj.duplicated(keep=False)]
-
-        print("-" * 20)
-        print("Exact Duplicates:")
-        with pd.option_context(
-                'display.max_rows', None, 
-                'display.max_columns', None, 
-                'display.max_colwidth', None):
-            print(duplicate_df)
-        print()
-        print(f"Percentage of duplicates: {len(duplicate_df) / len(self._obj) * 100:.2f}%")        
-        print("-" * 20)
+        dup_count = len(duplicate_df)
+        dup_percent = (dup_count / len(self._obj)) * 100 if len(self._obj) > 0 else 0
+        
+        print("\n" + "=" * 60)
+        print("EXACT DUPLICATES")
+        print("=" * 60)
+        print(f"Found {dup_count:,} duplicate rows ({dup_percent:.2f}%)")
+        print("-" * 60)
+        if dup_count > 0:
+            with pd.option_context(
+                    'display.max_rows', None, 
+                    'display.max_columns', None, 
+                    'display.max_colwidth', None):
+                print(duplicate_df)
+        else:
+            print("No duplicates found")
+        print("=" * 60)
 
     def analyze_columns(
         self,
@@ -101,7 +113,11 @@ class DescribeDataframes:
 
             for each numeric type, min, max
 
-            for each object/ string type, prints 
+            for each object/ string type column prints:
+                - The total number of unique values
+                - The number of Nan or null values based on isna()
+                - Each canonical value up to the first 10 under each column
+
 
         Parameters:
 
@@ -109,11 +125,49 @@ class DescribeDataframes:
             with each category column and the unique values of each
 
             return_numeric_dictionary, returns a dictionary of format {str, tuple}
+
+            @TODO add dictionary creation and return logic
         
         """
-
-        # numeric_df = df.select_dtypes(include=['number'])
-        pass
+        ## Numeric Column Processing ##
+        numeric_df = self._obj.select_dtypes(include='number')
+        
+        if len(numeric_df.columns) > 0:
+            print("\n" + "=" * 60)
+            print("NUMERIC COLUMNS ANALYSIS")
+            print("=" * 60)
+            
+            min_max_df = numeric_df.agg(['min', 'max'])
+            min_max_df.loc['na_count'] = numeric_df.isna().sum()
+            min_max_df.loc['na_percent'] = (numeric_df.isna().sum() / len(numeric_df)) * 100
+            min_max_df = min_max_df.T
+            
+            print(min_max_df)
+            print("=" * 60)
+        
+        ## String Column Processing ##
+        object_df = self._obj.select_dtypes(include='object')
+        
+        if len(object_df.columns) > 0:
+            print("\n" + "=" * 60)
+            print("CATEGORICAL/STRING COLUMNS ANALYSIS")
+            print("=" * 60)
+            
+            for col in object_df.columns:
+                na_count = object_df[col].isna().sum()
+                na_percent = (na_count / len(object_df)) * 100
+                unique_values = object_df[col].nunique()
+                
+                print(f"\n[{col}]")  # Cleaner column name display
+                print(f"  Missing: {na_count:,} ({na_percent:.2f}%)")
+                print(f"  Unique values: {unique_values:,}")
+                print(f"  Top 10 values:")
+                top_values = object_df[col].value_counts(dropna=True).head(10)
+                for value, count in top_values.items():
+                    print(f"    {value}: {count:,}")
+                print("-" * 60)
+            
+            print("=" * 60)
 
     def check_monotonic(
         self, 
