@@ -53,17 +53,19 @@ def get_raw_data_dir(source: str) -> Path:
     return path
 
 
-def get_processed_data_dir(dataset: str) -> Path:
+def get_processed_data_dir(vendor: str, dataset: str) -> Path:
     """
     Get processed data directory for a specific dataset.
     
     Args:
+        vendor: Vendor Name (wrds, polygon, databento etc.)
         dataset: Dataset name ('crsp', 'compustat', etc.)
+        @TODO, date: Date (date I might have on the file with some meaning of date acquired, date range of the data)
     
     Returns:
         Path to processed data directory
     """
-    path = get_data_dir() / "processed" / dataset.lower()
+    path = get_data_dir() / "processed" / vendor.lower() / dataset.lower()
     path.mkdir(parents=True, exist_ok=True)
     return path
 
