@@ -10,7 +10,6 @@ def load_environment():
     env_path = Path(__file__).parent.parent.parent.parent / ".env"
     load_dotenv(env_path)
 
-
 def get_aws_credentials() -> dict:
     """Get AWS credentials from environment."""
     load_environment()
@@ -18,7 +17,6 @@ def get_aws_credentials() -> dict:
         "aws_access_key_id": os.getenv("ACCESS_KEY_ID"),
         "aws_secret_access_key": os.getenv("SECRET_ACCESS_KEY"),
     }
-
 
 def get_api_key(service: str) -> str:
     """Get API key for a service."""
@@ -36,3 +34,10 @@ def get_api_key(service: str) -> str:
         raise ValueError(f"Missing {env_var} in environment")
     return key
 
+def get_wrds_credentials() -> dict:
+    """Get WRDS credentials from environment."""
+    load_environment()
+    return {
+        "username": os.getenv("WRDS_USERNAME"),
+        "password": os.getenv("WRDS_PASSWORD"),
+    }
