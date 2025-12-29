@@ -226,4 +226,3 @@ def atr_trend_sequential_offsets(
     df.drop('_temp_true_range', axis=1, inplace=True)
 
     return df
-

@@ -9,6 +9,7 @@ def bb_wdith_offset(
     lookback: int
     ) -> pd.DataFrame:
     """ Calculates bb width in a given lookback period using a given offset 
+    @TODO I think I should probably normalize this somehow
 
     Examples:
         bb_width_pct_20d_now = mean((upper - lower) / middle) over last 20 days
@@ -18,6 +19,8 @@ def bb_wdith_offset(
         bb_width_pct_20d_80d_ago = mean((upper - lower) / middle) for days -100 to -80
 
     """
+
+
 
 
     pass
@@ -40,4 +43,49 @@ def bb_price_position(
 
         0.5 = middle, 0.8 = upper band area, 0.2 = lower band area
 
+        @TODO need to make sure this works with price outside of the std bands as well
+
     """
+
+
+    pass
+
+def bb_sequential_trend(
+    df: pd.DataFrame,
+
+    ) -> pd.DataFrame:
+    """ Calculates the sequential period to period trend in BB width
+
+    Example Usage:
+        bb_trend_now_to_20d = bb_width_20d_now / bb_width_20d_20d_ago
+        bb_trend_20d_to_40d = bb_width_20d_20d_ago / bb_width_20d_40d_ago
+        bb_trend_40d_to_60d = bb_width_20d_40d_ago / bb_width_20d_60d_ago
+        bb_trend_60d_to_80d = bb_width_20d_60d_ago / bb_width_20d_80d_ago
+
+    """
+
+    pass
+
+
+def price_pct_in_lower_bound():
+    """ Calculates the percentage of time that price was trading above
+    """
+
+
+    pass
+
+def price_pct_blw_lower():
+
+    pass
+
+
+def price_pct_in_upper_bound():
+
+
+
+    pass
+
+def price_pct_abv_upper():
+
+    pass
+
