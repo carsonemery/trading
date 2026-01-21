@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 def intraday_residuals(
     df: pd.DataFrame
@@ -136,24 +137,68 @@ def gross_profitability(df: pd.DataFrame) -> pd.DataFrame:
 
 def investment_to_assets(df: pd.DataFrame):
     """
-    # 6) Investment to assets 
-    # Calc: The annual change in inventories scaled by lagged book value of assets
-
+    Calculate Investment to Assets factor.
+    
+    The annual change in inventories scaled by lagged total assets.
+    
+    I/A = (invtq_t - invtq_t-4) / atq_t-4
+    
+    Where:
+    - invtq = Inventories - Total
+    - invtq_t - invtq_t-4 = Change from same quarter last year (annual change)
+    - atq_t-4 = Total Assets lagged 4 quarters
+    
+    Assumes df is already sorted by ['permno', 'datadate'].
     """
     pass
 
-def momentum(df: pd.DataFrame):
+def momentum(df: pd.DataFrame) -> pd.DataFrame:
     """
-    # 7) Momentum 
-    # Calc: Cumulative return over the past 22 to 252 days 
-
+    Calculate momentum factor (12-2 momentum).
+    
+    Cumulative return from t-252 to t-22, skipping the most recent 21 days.
+    
+    Momentum = (price_t-22 / price_t-252) - 1
+    
+    Where:
+    - price_t-252 = Adjusted close price 252 trading days ago (~12 months)
+    - price_t-22 = Adjusted close price 22 trading days ago (~1 month)
+    - Skips days t-21 to t to avoid short-term reversal effects
+    
+    This is the standard Jegadeesh and Titman (1993) momentum specification.
+    
+    Assumes df is daily data, sorted by ['permno', 'date'].
+    Requires column: 'adj_close'
     """
-    pass
+    # Get price 252 days ago (start of momentum period)
+    df['price_lag252'] = df.groupby('permno')['adj_close'].shift(252)
+    
+    # Get price 22 days ago (end of momentum period, skipping recent 21 days)
+    df['price_lag22'] = df.groupby('permno')['adj_close'].shift(22)
+    
+    # Calculate cumulative return from t-252 to t-22
+    df['momentum'] = (df['price_lag22'] / df['price_lag252']) - 1
+    
+    # Clean up intermediate columns
+    df.drop(columns=['price_lag252', 'price_lag22'], inplace=True)
+    
+    return df
 
 def noa(df: pd.DataFrame):
-    """ # 8) Net Operating Assets
-        # Calc: Operating Assets minus operating liabilities, divided by lagged? 
     """
+    Calculate Net Operating Assets (NOA).
+    
+    NOA = (Operating Assets - Operating Liabilities) / Lagged Total Assets
+
+    Top-down from totals:
+    Operating Assets = atq - chq (or cheq) - ivstq (if excluding ST investments) - ivltq (LT Investments)
+    Operating Liabilities = ltq (Total Liabilities) - dlcq - dlttq - dd1q (all debt components)
+    
+    Denominator: atq lagged one quarter (or one year for annual calc)
+    
+    Assumes df is already sorted by ['permno', 'datadate'].
+    """
+
     pass
 
 def nsi(df: pd.DataFrame)->pd.DataFrame:
@@ -161,22 +206,50 @@ def nsi(df: pd.DataFrame)->pd.DataFrame:
     # 9) Net stock issues
     # Calc: The annual log change in split adjusted shares outstanding
     """
+    # Convert shares outstanding to log base e
+    df['shrout_log'] = np.log(df['adj_shrout'])
+
     pass
 
-# 10) O Score
-# Calc: Strictly following Ohlson 1980
+def o_score(df: pd.DataFrame) ->pd.DataFrame:
+    """
+        # 10) O Score
+        # Calc: Strictly following Ohlson 1980
+    """
+    pass
 
-# 11) Return on Assets
-# Calc: The ratio of quarterly earnings to last quarters earnings
+def roa(df: pd.DataFrame)->pd.DataFrame:
+    """
+    # 11) Return on Assets
+    # Calc: The ratio of quarterly earnings to last quarters earnings
+    """
+    pass
 
-# 12) Beta
-# Calc: 
+def beta(df: pd.DataFrame)->pd.DataFrame:
+    """
+        # 12) Beta
+        # Calc:
+    """
+    pass
+ 
+def book_to_market(df: pd.DataFrame)->pd.DataFrame:
+    """
+    # 13) Book to market
+    # Calc: The ratio of the book value of common equity to the market value of equity (ceqq / market cap)
 
-# 13) Book to market
-# Calc: The ratio of the book value of common equity to the market value of equity (ceqq / market cap)
+    """
+    pass
 
-# 14) Reversal 
-# Calc: Cumulative return over the past 21 days
+def reversal(df: pd.DataFrame)->pd.DataFrame:
+    """    
+    # 14) Reversal 
+    # Calc: Cumulative return over the past 21 days
+    """
+    pass
 
-# 15) Size
-# Calc: ln of market cap
+def size(df: pd.DataFrame)->pd.DataFrame:
+    """
+    # 15) Size
+    # Calc: ln of market cap
+    """
+    pass
