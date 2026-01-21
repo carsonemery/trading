@@ -73,7 +73,7 @@ DATE_COLUMNS = [
 ]
 
 
-def optimize_distributions(df: pd.DataFrame) -> pd.DataFrame:
+def optimize_datatypes(df: pd.DataFrame) -> pd.DataFrame:
     """
     Optimize distributions dataframe memory usage.
     Select columns, rename them, and convert to optimal dtypes.
@@ -82,6 +82,7 @@ def optimize_distributions(df: pd.DataFrame) -> pd.DataFrame:
     
     # Select and rename columns
     df = df[list(COLUMNS_TO_KEEP.keys())].copy()
+    # Renames the columns we are keeping using a dictionary datastructure
     df = df.rename(columns=COLUMNS_TO_KEEP)
     
     # Convert numeric dtypes
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     df = pd.read_parquet(input_file)
     
     # Optimize
-    df = optimize_distributions(df)
+    df = optimize_datatypes(df)
     
     # Save optimized version
     output_file = data_dir / "stkdistributions_combined_typed.parquet"

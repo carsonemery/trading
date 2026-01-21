@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 def load_environment():
     """Load environment variables from .env file."""
+    # config.py -> utils -> bearplanes -> src -> project_root
     env_path = Path(__file__).parent.parent.parent.parent / ".env"
     load_dotenv(env_path)
 
@@ -40,4 +41,6 @@ def get_wrds_credentials() -> dict:
     return {
         "username": os.getenv("WRDS_USERNAME"),
         "password": os.getenv("WRDS_PASSWORD"),
+        # Path to .pgpass file for passwordless connection
+        "pgpass_path": os.getenv("PGPASS_PATH")
     }

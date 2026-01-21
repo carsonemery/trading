@@ -1,9 +1,7 @@
 """Utility functions and helpers."""
 
-from bearplanes.utils.config import (get_api_key, get_aws_credentials,
-                                     get_wrds_credentials, load_environment)
-from bearplanes.utils.paths import (get_data_dir, get_processed_data_dir,
-                                    get_project_root, get_raw_data_dir)
+from bearplanes.utils.config import *
+from bearplanes.utils.paths import *
 
 __all__ = [
     # Paths

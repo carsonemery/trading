@@ -5,6 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info
+.pytest_cache/
 
 # Virtual environments
 .env
@@ -26,9 +27,6 @@ Data/
 *.h5
 *.txt
 *.pdf
-
-# Model engine - proprietary
-Features/Individual Features/
 
 # API keys and credentials
 *.key
