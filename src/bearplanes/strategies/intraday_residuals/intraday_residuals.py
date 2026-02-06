@@ -1,12 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def intraday_residuals(
-    df: pd.DataFrame
-    ):
-    """
-    """
-    pass
+""" All 15 factors used, some not implemented yet. """
 
 def accruals(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -135,7 +130,7 @@ def gross_profitability(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-def investment_to_assets(df: pd.DataFrame):
+def investment_to_assets(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate Investment to Assets factor.
     
@@ -150,7 +145,22 @@ def investment_to_assets(df: pd.DataFrame):
     
     Assumes df is already sorted by ['permno', 'datadate'].
     """
-    pass
+    # Get inventory from 4 quarters ago (same quarter last year)
+    df['invtq_lag4'] = df.groupby('permno')['invtq'].shift(4)
+    
+    # Calculate annual change in inventories
+    df['inv_change'] = df['invtq'] - df['invtq_lag4']
+    
+    # Get total assets from 4 quarters ago (lagged book value)
+    df['atq_lag4'] = df.groupby('permno')['atq'].shift(4)
+    
+    # Investment to Assets = change in inventory / lagged total assets
+    df['investment_to_assets'] = df['inv_change'] / df['atq_lag4']
+    
+    # Clean up intermediate columns
+    df.drop(columns=['invtq_lag4', 'inv_change', 'atq_lag4'], inplace=True)
+    
+    return df
 
 def momentum(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -184,7 +194,7 @@ def momentum(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
-def noa(df: pd.DataFrame):
+def noa(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate Net Operating Assets (NOA).
     
@@ -198,18 +208,84 @@ def noa(df: pd.DataFrame):
     
     Assumes df is already sorted by ['permno', 'datadate'].
     """
+    # Calculate Operating Assets
+    # Total assets minus cash and investments (non-operating assets)
+    df['operating_assets'] = df['atq'] - df['chq']
+    
+    # Subtract short-term investments if available (fillna(0) to handle missing values)
+    if 'ivstq' in df.columns:
+        df['operating_assets'] = df['operating_assets'] - df['ivstq'].fillna(0)
+    
+    # Subtract long-term investments if available
+    if 'ivltq' in df.columns:
+        df['operating_assets'] = df['operating_assets'] - df['ivltq'].fillna(0)
+    
+    # Calculate Operating Liabilities
+    # Total liabilities minus all debt components (financial liabilities)
+    df['operating_liabilities'] = df['ltq']
+    
+    # Subtract debt in current liabilities
+    if 'dlcq' in df.columns:
+        df['operating_liabilities'] = df['operating_liabilities'] - df['dlcq'].fillna(0)
+    
+    # Subtract long-term debt
+    if 'dlttq' in df.columns:
+        df['operating_liabilities'] = df['operating_liabilities'] - df['dlttq'].fillna(0)
+    
+    # Subtract long-term debt due in one year
+    if 'dd1q' in df.columns:
+        df['operating_liabilities'] = df['operating_liabilities'] - df['dd1q'].fillna(0)
+    
+    # Calculate Net Operating Assets
+    df['net_operating_assets'] = df['operating_assets'] - df['operating_liabilities']
+    
+    # Get lagged total assets (1 quarter lag)
+    df['atq_lag1'] = df.groupby('permno')['atq'].shift(1)
+    
+    # NOA = Net Operating Assets / Lagged Total Assets
+    df['noa'] = df['net_operating_assets'] / df['atq_lag1']
+    
+    # Clean up intermediate columns
+    df.drop(columns=['operating_assets', 'operating_liabilities', 'net_operating_assets', 'atq_lag1'], 
+            inplace=True)
+    
+    return df
 
-    pass
-
-def nsi(df: pd.DataFrame)->pd.DataFrame:
+def nsi(df: pd.DataFrame) -> pd.DataFrame:
     """
-    # 9) Net stock issues
-    # Calc: The annual log change in split adjusted shares outstanding
+    Calculate Net Stock Issues (NSI) factor.
+    
+    The annual log change in split-adjusted shares outstanding.
+    
+    NSI = log(shares_t) - log(shares_t-252)
+        = log(shares_t / shares_t-252)
+    
+    Where:
+    - shares_t = Current split-adjusted shares outstanding
+    - shares_t-252 = Shares outstanding 252 trading days ago (~12 months)
+    - Log change is symmetric: issuing/repurchasing have equal magnitude effects
+    
+    Positive NSI = company issued shares (dilution)
+    Negative NSI = company repurchased shares (buyback)
+    
+    Companies issuing shares typically underperform (negative expected returns).
+    
+    Assumes df is daily data, sorted by ['permno', 'date'].
+    Requires column: 'adj_shrout' (split-adjusted shares outstanding)
     """
     # Convert shares outstanding to log base e
-    df['shrout_log'] = np.log(df['adj_shrout'])
-
-    pass
+    df['log_shrout'] = np.log(df['adj_shrout'])
+    
+    # Get log shares outstanding from 252 days ago (12 months)
+    df['log_shrout_lag252'] = df.groupby('permno')['log_shrout'].shift(252)
+    
+    # NSI = log change in shares outstanding over past year
+    df['nsi'] = df['log_shrout'] - df['log_shrout_lag252']
+    
+    # Clean up intermediate columns
+    df.drop(columns=['log_shrout', 'log_shrout_lag252'], inplace=True)
+    
+    return df
 
 def o_score(df: pd.DataFrame) ->pd.DataFrame:
     """
@@ -218,12 +294,34 @@ def o_score(df: pd.DataFrame) ->pd.DataFrame:
     """
     pass
 
-def roa(df: pd.DataFrame)->pd.DataFrame:
+def roa(df: pd.DataFrame) -> pd.DataFrame:
     """
-    # 11) Return on Assets
-    # Calc: The ratio of quarterly earnings to last quarters earnings
+    Calculate ROA factor (quarterly earnings growth).
+    
+    The ratio of quarterly earnings to last quarter's earnings.
+    
+    ROA = niq_t / niq_t-1
+    
+    Where:
+    - niq_t = Net Income (Loss) for current quarter
+    - niq_t-1 = Net Income (Loss) for previous quarter
+    
+    This measures quarter-over-quarter earnings momentum.
+    Companies with strong recent earnings growth tend to continue outperforming.
+    
+    Assumes df is quarterly data, sorted by ['permno', 'datadate'].
+    Requires column: 'niq' (Net Income quarterly)
     """
-    pass
+    # Get net income from previous quarter
+    df['niq_lag1'] = df.groupby('permno')['niq'].shift(1)
+    
+    # ROA = current quarter earnings / previous quarter earnings
+    df['roa'] = df['niq'] / df['niq_lag1']
+    
+    # Clean up intermediate columns
+    df.drop(columns=['niq_lag1'], inplace=True)
+    
+    return df
 
 def beta(df: pd.DataFrame)->pd.DataFrame:
     """
