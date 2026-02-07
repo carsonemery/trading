@@ -35,6 +35,7 @@ env/
 
 # Allow 
 !*.py
+# Jupyter Notebook checkpoints
 !*.ipynb
 
 # API keys and credentials
@@ -59,8 +60,6 @@ databento_key.txt
 logs/
 temp/
 tmp/
-
-# Jupyter Notebook checkpoints
 
 # Model files (if generated)
 *.pkl
