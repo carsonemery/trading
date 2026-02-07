@@ -27,9 +27,11 @@ env/
 *.txt
 *.pdf
 *.csv.gz
+*.gz
 *.json
 *.zst
 *.dbn
+*.dbn.zst
 
 # Allow 
 !*.py
