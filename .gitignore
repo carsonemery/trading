@@ -28,6 +28,8 @@ env/
 *.pdf
 *.csv.gz
 *.json
+*.zst
+*.dbn
 
 # Allow 
 !*.py
