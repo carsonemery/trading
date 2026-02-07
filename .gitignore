@@ -26,6 +26,8 @@ env/
 *.h5
 *.txt
 *.pdf
+*.csv.gz
+*.json
 
 # Allow 
 !*.py
