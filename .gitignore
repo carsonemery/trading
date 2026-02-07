@@ -16,7 +16,6 @@ venv/
 env/
 
 # Data files - DO NOT COMMIT
-Data/
 *.csv
 *.xlsx
 *.xls
@@ -27,6 +26,10 @@ Data/
 *.h5
 *.txt
 *.pdf
+
+# Allow 
+!*.py
+!*.ipynb
 
 # API keys and credentials
 *.key
