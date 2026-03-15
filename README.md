@@ -11,6 +11,7 @@ uv sync
 ```
 
 Requires `.env` file with:
+
 - `POLYGON_API_KEY`
 - `DATABENTO_API_KEY`
 - `WRDS_USERNAME`
@@ -19,6 +20,8 @@ Requires `.env` file with:
 - `ACCESS_KEY_ID` (AWS)
 - `SECRET_ACCESS_KEY` (AWS)
 - `BEARPLANES_DATA_DIR` (optional, custom data directory path)
+
+Requires TWS API to be installed at C:\TWS API\
 
 ## Data Sources
 
@@ -42,5 +45,3 @@ I have completed the basic data pipeline functionality for historical OHLCV data
 After developing and testing strategies with consistent out-of-sample performance, I will build out an order and trade management system and a trading client for Interactive Brokers using C#, Python, or C++.
 
 I also plan to construct different bar types (dollar bars, volume bars, dollar imbalance bars, etc.) and develop features and strategies using these alternative sampling methods.
-
-
