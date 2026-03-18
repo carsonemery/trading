@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pandas as pd
 
 from bearplanes.data.wrds.client import WRDSClient
 from bearplanes.data.wrds.compustat.fields import fields as field_list

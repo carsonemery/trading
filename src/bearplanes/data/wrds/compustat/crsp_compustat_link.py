@@ -2,12 +2,10 @@
 
 from pathlib import Path
 
-import pandas as pd
-
 from bearplanes.data.wrds.client import WRDSClient
 
 
-def download_crsp_compustat_link(output_dir: Path = None) -> pd.DataFrame:
+def download_crsp_compustat_link(output_dir: Path | None = None):
     """Download the CRSP-Compustat linking table.
     
     This table maps CRSP PERMNOs to Compustat GVKEYs, allowing you to link
@@ -26,11 +24,10 @@ def download_crsp_compustat_link(output_dir: Path = None) -> pd.DataFrame:
     with WRDSClient() as db:
         # Download the CRSP-Compustat link table
         ccm_link = db.raw_sql("""
-            SELECT gvkey, lpermno as permno, lpermco as permco,
-                   linktype, linkprim, linkdt, linkenddt, liid as iid
-            FROM crsp.ccmxpf_lnkhist
+            SELECT *
+            FROM crspq.ccmlinktable
             WHERE linktype IN ('LC', 'LU', 'LS')  -- Primary links only
-              AND linkprim IN ('P', 'C', 'J')           -- Primary securities + Joiner/Secondary
+            AND linkprim IN ('P', 'C', 'J')     -- Primary securities + Joiner/Secondary
         """)
 
         if output_dir:
@@ -43,4 +40,3 @@ def download_crsp_compustat_link(output_dir: Path = None) -> pd.DataFrame:
             return ccm_link
         else:
             return ccm_link
-    

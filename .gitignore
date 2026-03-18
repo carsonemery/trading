@@ -24,19 +24,14 @@ env/
 *.feather
 *.hdf5
 *.h5
-*.txt
-*.pdf
 *.csv.gz
 *.gz
-*.json
-*.zst
 *.dbn
 *.dbn.zst
+*.json
 
-# Allow 
-!*.py
 # Jupyter Notebook checkpoints
-!*.ipynb
+.ipynb_checkpoints/
 
 # API keys and credentials
 *.key
@@ -61,12 +56,23 @@ logs/
 temp/
 tmp/
 
-# Model files (if generated)
+# Model files
 *.pkl
 *.pickle
 *.joblib
-*.h5
 *.pb
 *.onnx
+
+# C++ / CMake build artifacts
+trading/build/
+trading/out/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+
 
 
