@@ -1,0 +1,20 @@
+{
+    "name": "bearplanes",
+    "version": "0.1.0",
+    "dependencies": [
+        {
+            "name": "protobuf",
+            "platform": "windows"
+        },
+        {
+            "name": "intelrdfpmathlib",
+            "platform": "windows"
+        }
+    ],
+    "overrides": [
+        {
+            "name": "protobuf",
+            "version": "5.29.3"
+        }
+    ]
+}
