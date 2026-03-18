@@ -74,6 +74,6 @@ trading/out/
 *.dylib
 *.lib
 
-# Allow CMake/vcpkg config files (CMakeUserPresets.json stays ignored - it's per-developer)
+# Allow CMake/vcpkg config files
 !trading/CMakePresets.json
 !trading/vcpkg.json
